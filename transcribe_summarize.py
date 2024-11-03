@@ -93,6 +93,28 @@ class YouTubeVideo():
             str: The description of the YouTube video.
         """
 
+        # Parse the HTML content using BeautifulSoup
+        try:
+            # Try to find the video description in a <meta> tag
+            description_meta = self.soup.find('meta', attrs={'name': 'description'})
+            if description_meta:
+                return description_meta['content']  # Return the description text
+
+            # Alternative approach if <meta> tag not found
+            description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
+            if description_tag:
+                return description_tag.text.strip()
+            
+            if not description_meta and not description_tag:
+                raise Exception("Description not found in meta tag or paragraph tag.")
+
+        except Exception as e:
+            print(f"Error parsing the HTML content: {e}")
+            return None
+
+        print("Could not find the video description on the page.")
+        return None  # If the description could not be found
+    
         description_regex = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
         description = description_regex.findall(str(self.soup))[0].replace('\\n','\n')
         return description
@@ -318,7 +340,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
     def get_minimal_chapter_summary(self, section, model='gpt-4o-mini'):
 
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        client = OpenAI(api_key=self.api_key)
 
         response = client.chat.completions.create(
             model=model,
