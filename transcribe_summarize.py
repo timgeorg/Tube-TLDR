@@ -128,8 +128,9 @@ class YouTubeVideo():
 
 class YouTubeTranscribeSummarize(YouTubeVideo):
 
-    def __init__(self, url):
+    def __init__(self, url, api_key=os.getenv('OPENAI_API')):
         super().__init__(url)
+        self.api_key = api_key
 
 
     def _convert_transcript_to_timedelta(self, data):
@@ -158,9 +159,8 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     def get_outline(self, description):
-        load_dotenv()
 
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        client = OpenAI(api_key=self.api_key)
 
         response = client.chat.completions.create(
             model='gpt-4o-mini',
@@ -284,7 +284,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
     def get_chapter_summary(self, section, model='gpt-4o-mini'):
 
-        client = OpenAI(api_key=os.getenv('OPENAI_API'))
+        client = OpenAI(api_key=self.api_key)
 
         self.logger.info(f"Getting summary for section: {section["topic"]}")
 
@@ -342,7 +342,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     def get_unified_summary(self, sections):
-        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        client = OpenAI(api_key=self.api_key)
 
         response = client.chat.completions.create(
 
@@ -368,8 +368,8 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     
-def example_summary(url):
-    obj = YouTubeTranscribeSummarize(url=url)
+def example_summary(url, api_key):
+    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
     desc = obj.description
     outline = obj.get_outline(desc)
 

@@ -21,7 +21,7 @@ if st.button("Generate Summary"):
             st.write("Please enter a valid YouTube URL.")
         else:
             with st.spinner('Generating summary...'):
-                summary = example_summary(youtube_url)
+                summary = example_summary(youtube_url, st.secrets["API_KEY"])
             st.write("Summary:")
             st.write("Description available:")
             for chapter in summary:
