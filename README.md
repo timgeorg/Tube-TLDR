@@ -12,3 +12,5 @@
 - get unity in timestamps in summary headings
 
 - try TL:DR in Prompts
+
+- Add a functions to to one unified summary based on the video content

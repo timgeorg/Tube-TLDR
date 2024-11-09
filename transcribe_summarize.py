@@ -150,7 +150,7 @@ class YouTubeVideo():
 
 class YouTubeTranscribeSummarize(YouTubeVideo):
 
-    def __init__(self, url, api_key=os.getenv('OPENAI_API')):
+    def __init__(self, url, api_key=os.getenv('OPENAI_API_KEY')):
         super().__init__(url)
         self.api_key = api_key
 
@@ -273,7 +273,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
         # Determine chunk length based on total duration
         if total_duration <= 15:
-            chunk_length = timedelta(minutes=3)
+            chunk_length = timedelta(minutes=total_duration)
         elif 15 < total_duration <= 45:
             chunk_length = timedelta(minutes=5)
         elif 45 < total_duration <= 90:
@@ -322,13 +322,13 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
                         If they talk about the 5 things or the 9 types or something like that, list them. \
                         Answer the question thats given in the topic or chapter title if available. \
                         Put the topic with timestamp (in h, min, sec) in the format "hh:mm:ss" as a heading.\
-                        Every Heading should be a markdown ## heading. If there is no heading (eg. Chapter 1), create one out of the content provided. \
+                        Every Heading should be a markdown ## heading. If there is no heading title (eg. just Chapter 1), create a heading out of the content provided. \
                         Try to keep it as short as possible, but as long as necessary. '},
 
                 {'role': 'user', 'content': str(section)}
             ],
             temperature=0.08,
-            max_tokens=512,
+            max_tokens=1024,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
@@ -390,10 +390,19 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     
-def example_summary(url, api_key):
+def example_summary(url, api_key=os.getenv('OPENAI_API_KEY')):
     obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
     desc = obj.description
     outline = obj.get_outline(desc)
+
+    if obj.transcript is None:
+        ErrorMessage = f"Could not retrieve a transcript for the video {url}! \
+        This is most likely caused by: \
+        \n\nSubtitles are disabled for this video. \
+        \n\nOpen the transcript in YouTube manually and try again. \
+        This may resolve the issue."
+        print(ErrorMessage)
+        return ErrorMessage
 
     sections = []
 

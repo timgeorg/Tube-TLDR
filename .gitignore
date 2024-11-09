@@ -163,3 +163,5 @@ cython_debug/
 
 secrets.toml
 .streamlit/
+credentials.yaml
+generate_keys.py
