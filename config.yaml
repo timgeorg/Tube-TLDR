@@ -1,0 +1,10 @@
+credentials:
+  usernames:
+    joey:
+      name: Joey
+      password: "howyoudoin"
+      email: "immerdiesertim@freenet.de"
+cookie:
+  expiry_days: 3
+  key: supersecretkey
+  name: demo_key
