@@ -24,7 +24,9 @@ class YouTubeVideo():
         self.soup = self._get_metadata(url)
         self.title = self._get_title()
         self.channel = self._get_channel()
+        self.duration = self._get_duration()
         self.description = self._get_description()
+        self.chapters = self._get_chapters()
         self.transcript = self._get_transcript()
 
     
@@ -84,6 +86,29 @@ class YouTubeVideo():
         return channel_name
     
 
+    def _get_duration(self):
+        """
+        Extracts the duration of a YouTube video from the provided BeautifulSoup object.
+        Args:
+            soup (BeautifulSoup): A BeautifulSoup object containing the parsed HTML of a YouTube page.
+        Returns:
+            str: The duration of the video if found, otherwise "Duration not found".
+        """
+        self.logger.info(f"Getting duration ...")
+        duration_tag = self.soup.find("meta", itemprop="duration")
+        duration = duration_tag["content"] if duration_tag else "Duration not found"
+        # Convert the ISO 8601 duration to timedelta object
+        duration = re.search(r"PT(\d+H)?(\d+M)?(\d+S)?", duration).groups()
+        duration = timedelta(
+            hours=int(duration[0][:-1]) if duration[0] else 0,
+            minutes=int(duration[1][:-1]) if duration[1] else 0,
+            seconds=int(duration[2][:-1]) if duration[2] else 0
+        )
+
+        self.logger.info(f"Duration: {duration}")
+        return duration
+    
+
     def _get_description(self):
         """
         Extracts the description from a YouTube video page.
@@ -118,7 +143,11 @@ class YouTubeVideo():
         description_regex = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
         description = description_regex.findall(str(self.soup))[0].replace('\\n','\n')
         return description
+    
 
+    def _get_chapters(self):
+        return None
+    
 
     def _get_transcript(self):
         """
@@ -137,7 +166,7 @@ class YouTubeVideo():
         video_id = self.url.split('=')[-1]
 
         try:
-            data = YouTubeTranscriptApi.get_transcript(video_id, languages=("de", "en"))
+            data = YouTubeTranscriptApi.get_transcript(video_id, languages=("en", "de"))
             timestamped_data = self._convert_transcript_to_timedelta(data)
             self.logger.info(f"Successfully retrieved transcript")
             return timestamped_data
@@ -264,6 +293,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
         return outline
 
+
     def link_transcript_without_outline(self, content):
 
         # get max length of content
@@ -387,6 +417,31 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
         
         result = response.choices[0].message.content
         return result
+    
+
+    def get_whole_transcript_summary(self, transcript):
+        client = OpenAI(api_key=self.api_key)
+
+        response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[
+                {'role': 'system', 
+                'content': 
+                    'Summarize the following transcript of a podcast. \
+                        Do not only list the topics they talk about, but briefly explain every idea you mention in the summary. \
+                        Still try to keep it as short as possible. Use bullet points if possible.'},
+
+                {'role': 'user', 'content': transcript}
+            ],
+            temperature=0.08,
+            max_tokens=1024,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
+
+        result = response.choices[0].message.content
+        return result
 
 
     
@@ -403,13 +458,21 @@ def example_summary(url, api_key=os.getenv('OPENAI_API_KEY')):
         This may resolve the issue."
         print(ErrorMessage)
         return ErrorMessage
+    
+    if obj.duration < timedelta(minutes=20):
+        unified_transcript = " ".join([item["text"] for item in obj.transcript])
+
+        summary = obj.get_whole_transcript_summary(unified_transcript)
+        chap_summaries = [summary]
+    else:
+        pass 
 
     sections = []
 
     if outline is None:
         transcript = obj.transcript
         transcript_length = len(transcript)
-        print(f"Transcript length: {transcript_length}")
+        print(f"Transcript length: {transcript_length} segments")
         # outline = obj._convert_timestamps(transcript) # only if outline is found in description
         print(outline)
         sections = obj.link_transcript_without_outline(transcript)
