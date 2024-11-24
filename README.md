@@ -17,3 +17,6 @@
 
 - improve and unittest the get outline function
 
+- write a function to get a dedicated chapter headline when synthetically generated
+
+- display channel name, video name and other metadata at top of the summary

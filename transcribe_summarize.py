@@ -98,14 +98,19 @@ class YouTubeVideo():
         duration_tag = self.soup.find("meta", itemprop="duration")
         duration = duration_tag["content"] if duration_tag else "Duration not found"
         # Convert the ISO 8601 duration to timedelta object
-        duration = re.search(r"PT(\d+H)?(\d+M)?(\d+S)?", duration).groups()
-        duration = timedelta(
-            hours=int(duration[0][:-1]) if duration[0] else 0,
-            minutes=int(duration[1][:-1]) if duration[1] else 0,
-            seconds=int(duration[2][:-1]) if duration[2] else 0
-        )
+        try:
+            duration = re.search(r"PT(\d+H)?(\d+M)?(\d+S)?", duration).groups()
+            duration = timedelta(
+                hours=int(duration[0][:-1]) if duration[0] else 0,
+                minutes=int(duration[1][:-1]) if duration[1] else 0,
+                seconds=int(duration[2][:-1]) if duration[2] else 0
+            )
+            self.logger.info(f"Duration: {duration}")
 
-        self.logger.info(f"Duration: {duration}")
+        except Exception as e:
+            self.logger.error(f"An error occurred while parsing the duration: {e}")
+            duration = "Duration not found"
+        
         return duration
     
 
