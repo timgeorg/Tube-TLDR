@@ -148,6 +148,13 @@ class YouTubeVideo():
         except Exception as e:
             self.logger.error(f"Could not find the video description on the page: {e}")
 
+        try:
+            description = self.soup.find("meta", itemprop="description")['content']
+            return description
+
+        except Exception as e:
+            self.logger.error(f"Could not find the video description on the page: {e}")
+
 
         print("Could not find the video description on the page.")
         return None  # If the description could not be found
