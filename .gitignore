@@ -165,3 +165,4 @@ secrets.toml
 .streamlit/
 credentials.yaml
 generate_keys.py
+.vscode/

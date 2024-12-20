@@ -4,7 +4,7 @@ from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import re
 
-from transcribe_summarize import example_summary
+from src.transcribe_summarize import example_summary
 
 
 

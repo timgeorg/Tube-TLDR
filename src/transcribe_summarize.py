@@ -21,7 +21,9 @@ class YouTubeVideo():
         self.url = url
         self.logger = Logger().create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
-        self.soup = self._get_metadata(url)
+    
+    def get_data(self):
+        self.soup = self._get_metadata()
         self.title = self._get_title()
         self.channel = self._get_channel()
         self.duration = self._get_duration()
@@ -30,7 +32,7 @@ class YouTubeVideo():
         self.transcript = self._get_transcript()
 
     
-    def _get_metadata(self, url):
+    def _get_metadata(self) -> BeautifulSoup:
         """
         Fetches and parses the metadata from the given URL.
         This method sends a GET request to the specified URL, retrieves the HTML content,
@@ -42,15 +44,14 @@ class YouTubeVideo():
         Raises:
             requests.exceptions.HTTPError: If the HTTP request returned an unsuccessful status code.
         """
-
-        self.logger.info(f"Getting metadata from {url}")
-        response = requests.get(url)
-        response.raise_for_status()  # Ensure the request was successful
+        self.logger.info(f"Getting metadata from {self.url}")
+        response = requests.get(self.url)
+        response.raise_for_status()
         html = response.content
         soup = BeautifulSoup(html, features="html.parser")
-        self.logger.info(f"Successfully retrieved metadata from {url}")
+        self.logger.info(f"Successfully retrieved metadata from {self.url}")
         return soup
-    
+
 
     def _get_title(self):
         """
@@ -462,6 +463,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
     
 def example_summary(url, api_key=os.getenv('OPENAI_API_KEY')):
     obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    obj.get_data()
     desc = obj.description
     outline = obj.get_outline(desc)
 
