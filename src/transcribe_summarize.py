@@ -125,37 +125,26 @@ class YouTubeVideo():
         """
 
         # Parse the HTML content using BeautifulSoup
-        try:
-            # Try to find the video description in a <meta> tag
-            description_meta = self.soup.find('meta', attrs={'name': 'description'})
-            if description_meta:
-                return description_meta['content']  # Return the description text
+        # Try to find the video description in a <meta> tag
+        # description_meta = self.soup.find('meta', attrs={'name': 'description'})
+        # # only short description
+        # if description_meta:
+        #     return description_meta['content']  # Return the description text
 
-            # Alternative approach if <meta> tag not found
-            description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
-            if description_tag:
-                return description_tag.text.strip()
-            
-            if not description_meta and not description_tag:
-                raise Exception("Description not found in meta tag or paragraph tag.")
-
-        except Exception as e:
-            self.logger.error(f"Error parsing the HTML content: {e}")
-
+        # # Alternative approach if <meta> tag not found
+        # description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
+        # if description_tag:
+        #     return description_tag.text.strip()
+        
         try:
             description_regex = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
-            description = description_regex.findall(str(self.soup))[0].replace('\\n','\n')
+            description = description_regex.findall(str(self.soup))[0].replace('\\n', '\n')
             return description
         except Exception as e:
             self.logger.error(f"Could not find the video description on the page: {e}")
 
-        try:
-            description = self.soup.find("meta", itemprop="description")['content']
-            return description
-
-        except Exception as e:
-            self.logger.error(f"Could not find the video description on the page: {e}")
-
+        # Raise an exception if description is not found
+        raise Exception("Description not found in meta tag or paragraph tag.")
 
         print("Could not find the video description on the page.")
         return None  # If the description could not be found
@@ -230,18 +219,16 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
         client = OpenAI(api_key=self.api_key)
 
         response = client.chat.completions.create(
-            model='gpt-4o-mini',
+            model='gpt-4o',
             messages=[
-                {'role': 'system', 
+                {'role': 'user', 
                 'content': 
-                    'If the following video description contains an outline, return the outline as a JSON list with "timestamp" and "topic". \
-                        The one key containing this list shall be called "timestamps".\
-                        If there is no outline, return "No outline found in description.".'},
-
-                {'role': 'user', 'content': description}
+                    'Convert the following youtube video description into a JSON list with "timestamp" and "content" keys and values.\n \
+                    Use this format: [{"timestamp": "00:00:00", "content": "Introduction"}, {"timestamp": "00:01:30", "content": "Chapter 1"}]\n \
+                    Here is the Video Description with the timestamps shall be extracted \n\n' + description},
             ],
-            temperature=0.08,
-            max_tokens=2048,
+            temperature=0.2,
+            # max_tokens=,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
@@ -253,6 +240,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
         try:
             result = json.loads(result)
+            print(result)
             if not result["timestamps"]:
                 self.logger.info(f"No outline found in description.")
                 return None

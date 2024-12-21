@@ -71,8 +71,44 @@ class Test_YouTubeVideo_GetDescription(unittest.TestCase):
         self.assertIsInstance(description, str)
         self.assertNotEqual(description, None)
 
-    if __name__ == '__main__':
-        unittest.main()
+class Test_YouTubeVideo_GetTranscript(unittest.TestCase):
+    def test_get_transcript(self):
+        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
+        # TODO
+    
+class Test_YouTubeTranscribeSummarize_GetOutline(unittest.TestCase):
+    def test_get_chapter_timestamps(self):
+        video = YouTubeTranscribeSummarize("https://www.youtube.com/watch?v=X4DpDM9jmqo")
+        video.get_data()
+        outline = video.get_outline(video.description)
+        print(outline)
+
+
+        
+        expected_output = [
+        {"timestamp": "0:00", "content": "Intro"},
+        {"timestamp": "1:20", "content": "Gibt es Delfine die intensiven Kontakt zu Menschen suchen?"},
+        {"timestamp": "6:00", "content": "Wie viel Fisch darf ich essen, damit es noch nachhaltig ist?"},
+        {"timestamp": "23:00", "content": "Kann man mit einer Ober-Fanggrenze dafür sorgen, dass sich unsere Meere regenerieren?"},
+        {"timestamp": "30:00", "content": "Bei welchen Themen im Umweltschutz gibt es keine Ausreden?"},
+        {"timestamp": "43:00", "content": "Warum ist es trotz der hohen Kosten und geringer Erfolgschance so wichtig, zu versuchen jedes einzelne Tier zu retten?"},
+        {"timestamp": "50:00", "content": "Was läuft aktuell politisch und gesellschaftlich falsch?"},
+        {"timestamp": "1:20:00", "content": "Wie bist du vom Angler und Aquariums-Chef zu dem Robert geworden, der du heute bist?"},
+        {"timestamp": "1:41:00", "content": "Wie fandest du die Baby-Delfin Aktion von Inscope21?"},
+        {"timestamp": "1:44:00", "content": "Warum kann man Wale beim Abnoetauchen besser beobachten?"},
+        {"timestamp": "1:54:00", "content": "Wie ist das Gefühl von den größten Säugetieren der Welt, wahrgenommen zu werden?"},
+        {"timestamp": "2:09:30", "content": "Wird man es schaffen, Delfine und Wale zu verstehen?"},
+        {"timestamp": "2:23:00", "content": "Wie kann man selber tun, um den Tieren die in Gefangenschaft leben, zu helfen?"},
+        {"timestamp": "2:30:00", "content": "Warum sind Wale so viel emphatischer als Menschen?"},
+        {"timestamp": "2:53:00", "content": "Haben Wale Charakterunterschiede?"},
+        {"timestamp": "3:02:00", "content": "Welche Erlebnisse auf deinen Reisen waren für dich besonders einprägsam?"},
+        {"timestamp": "3:09:00", "content": "Wie stressig ist es das ganze Jahr auf Expeditionen zu sein?"},
+        {"timestamp": "3:23:15", "content": "Warum möchte niemand für Umweltschutz bezahlen und wie finanzierst du dich?"},
+        {"timestamp": "3:44:00", "content": "Würdest du nochmal Biologie studieren?"}
+        ]
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
