@@ -4,8 +4,7 @@ from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import re
 
-from src.transcribe_summarize import example_summary
-
+from transcribe_summarize import example_summary
 
 
 with open('config.yaml') as file:
