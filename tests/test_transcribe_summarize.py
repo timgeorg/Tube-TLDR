@@ -16,7 +16,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from openai import OpenAI # OR: from openai import AzureOpenAI
 
 
-from src.transcribe_summarize import YouTubeVideo, YouTubeTranscribeSummarize
+from transcribe_summarize import YouTubeVideo, YouTubeTranscribeSummarize
 
 class Test_YouTubeVideo_Init(unittest.TestCase):
     def test_init(self):
