@@ -49,6 +49,13 @@ elif st.session_state['authentication_status']:
             else:
                 with st.spinner('Getting video ...'):
                     st.session_state.youtube_video = get_video(youtube_url)
+                    has_description = bool(st.session_state.youtube_video.description)
+                    has_transcript = bool(st.session_state.youtube_video.transcript)
+                    if not has_transcript:
+                        st.error(
+                            "Transcript not available for this video. Please try again. \
+                            Opening the Video Transript in your browser and then trying again may resolve the issue."
+                            )
                     if st.session_state.youtube_video:
                         st.success("Video retrieved successfully!")
                         st.markdown("### Video Attributes:")
@@ -57,6 +64,8 @@ elif st.session_state['authentication_status']:
                         st.markdown(f"- **Duration:** {st.session_state.youtube_video.duration}")
                         st.markdown(f"- **Description available:** {bool(st.session_state.youtube_video.description)}")
                         st.markdown(f"- **Transcript available:** {bool(st.session_state.youtube_video.transcript)}")
+
+                    
 
                     else:
                         st.error("Failed to retrieve video. Please try again.")

@@ -166,3 +166,6 @@ secrets.toml
 credentials.yaml
 generate_keys.py
 .vscode/
+
+# Markdown
+*.md

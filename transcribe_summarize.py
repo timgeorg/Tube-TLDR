@@ -217,12 +217,12 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
         client = OpenAI(api_key=self.api_key)
 
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4o-mini',
             messages=[
                 {'role': 'user', 
                 'content': 
                     'Convert the following youtube video description into a JSON list with "timestamp" and "content" keys and values.\n \
-                    Use this format: [{"timestamp": "00:00:00", "content": "Introduction"}, {"timestamp": "00:01:30", "content": "Chapter 1"}]\n \
+                    Use this format: [{"timestamp": "00:00:00", "topic": "Introduction"}, {"timestamp": "00:01:30", "topic": "Chapter 1"}]\n \
                     Here is the Video Description with the timestamps shall be extracted \n\n' + description},
             ],
             temperature=0.2,
@@ -257,7 +257,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
             return None
 
 
-    def _convert_timestamps(self, result):
+    def _convert_timestamps(self, result: dict) -> list:
 
         outlist = result["timestamps"]
 
@@ -453,10 +453,9 @@ def get_video(url):
     return video
 
 
-def example_summary(url, api_key=os.getenv('OPENAI_API_KEY')):
+def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
     obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
     obj.get_data()
-
 
     desc = obj.description
     outline = obj.get_outline(desc)
