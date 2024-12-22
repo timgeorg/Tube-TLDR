@@ -16,10 +16,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Utilities.logger import Logger
 
 
-class YouTubeVideo():
+class YouTubeVideo(Logger):
     def __init__(self, url):
         self.url = url
-        self.logger = Logger().create_logger(name=self.__class__.__name__) 
+        self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     
     def get_data(self):
@@ -30,6 +30,7 @@ class YouTubeVideo():
         self.description = self._get_description()
         self.chapters = self._get_chapters()
         self.transcript = self._get_transcript()
+        self.logger.info(f"Data successfully retrieved for Video")
 
     
     def _get_metadata(self) -> BeautifulSoup:
@@ -152,6 +153,31 @@ class YouTubeVideo():
         return None
     
 
+    def _convert_transcript_to_timedelta(self, data):
+        """
+        Converts transcript data to include end time, minutes, seconds, and timestamp.
+        Args:
+            data (list of dict): A list of dictionaries where each dictionary represents a transcript item 
+                with 'start' and 'duration' keys.
+        Returns:
+            list of dict: The modified list of dictionaries with additional keys:
+                - 'end_time': The end time of the transcript item.
+                - 'minutes': The minute part of the end time.
+                - 'seconds': The second part of the end time.
+                - 'timestamp': A timedelta object representing the end time.
+        """
+
+        for item in data:
+            item["end_time"] = item['start'] + item['duration']
+            end_time = float(item['start']) + float(item['duration'])
+            minutes, seconds = divmod(end_time, 60)
+            item["minutes"] = minutes
+            item["seconds"] = seconds
+            item["timestamp"] = timedelta(minutes=item["minutes"], seconds=item["seconds"])
+
+        return data
+    
+
     def _get_transcript(self):
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
@@ -185,32 +211,6 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
     def __init__(self, url, api_key=os.getenv('OPENAI_API_KEY')):
         super().__init__(url)
         self.api_key = api_key
-
-
-    def _convert_transcript_to_timedelta(self, data):
-        """
-        Converts transcript data to include end time, minutes, seconds, and timestamp.
-        Args:
-            data (list of dict): A list of dictionaries where each dictionary represents a transcript item 
-                with 'start' and 'duration' keys.
-        Returns:
-            list of dict: The modified list of dictionaries with additional keys:
-                - 'end_time': The end time of the transcript item.
-                - 'minutes': The minute part of the end time.
-                - 'seconds': The second part of the end time.
-                - 'timestamp': A timedelta object representing the end time.
-        """
-
-        for item in data:
-            item["end_time"] = item['start'] + item['duration']
-            end_time = float(item['start']) + float(item['duration'])
-            minutes, seconds = divmod(end_time, 60)
-            item["minutes"] = minutes
-            item["seconds"] = seconds
-            item["timestamp"] = timedelta(minutes=item["minutes"], seconds=item["seconds"])
-
-        return data
-
 
     def get_outline(self, description):
 
@@ -447,9 +447,17 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     
+def get_video(url):
+    video = YouTubeVideo(url)
+    video.get_data()
+    return video
+
+
 def example_summary(url, api_key=os.getenv('OPENAI_API_KEY')):
     obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
     obj.get_data()
+
+
     desc = obj.description
     outline = obj.get_outline(desc)
 
