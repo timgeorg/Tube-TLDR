@@ -123,18 +123,6 @@ class YouTubeVideo():
         Returns:
             str: The description of the YouTube video.
         """
-
-        # Parse the HTML content using BeautifulSoup
-        # Try to find the video description in a <meta> tag
-        # description_meta = self.soup.find('meta', attrs={'name': 'description'})
-        # # only short description
-        # if description_meta:
-        #     return description_meta['content']  # Return the description text
-
-        # # Alternative approach if <meta> tag not found
-        # description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
-        # if description_tag:
-        #     return description_tag.text.strip()
         
         try:
             description_regex = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
@@ -143,11 +131,21 @@ class YouTubeVideo():
         except Exception as e:
             self.logger.error(f"Could not find the video description on the page: {e}")
 
-        # Raise an exception if description is not found
-        raise Exception("Description not found in meta tag or paragraph tag.")
+        # Parse the HTML content using BeautifulSoup
+        # Try to find the video description in a <meta> tag
+        description_meta = self.soup.find('meta', attrs={'name': 'description'})
+        # only short description
+        if description_meta:
+            return description_meta['content']  # Return the description text
 
+        # Alternative approach if <meta> tag not found
+        description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
+        if description_tag:
+            return description_tag.text.strip()
+
+        # Raise an exception if description is not found
         print("Could not find the video description on the page.")
-        return None  # If the description could not be found
+        raise Exception("Description not found in meta tag or paragraph tag.")
 
 
     def _get_chapters(self):
