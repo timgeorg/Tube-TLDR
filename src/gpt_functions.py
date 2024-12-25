@@ -73,6 +73,7 @@ def get_whole_transcript_summary(transcript: str, api_key=os.getenv("OPENAI_API_
     result = response.choices[0].message.content
     return result
 
+
 def get_one_sentence_summary(transcript: str, title="", api_key=os.getenv("OPENAI_API_KEY")) -> str:
     """
     Generates a one-sentence summary for the entire transcript. 

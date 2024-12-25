@@ -263,7 +263,7 @@ def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list |
     chap_summaries = []
 
     for section in sections:
-        chap_summary = gpt.get_chapter_summary(section)
+        chap_summary = gpt.get_chapter_summary(section, api_key=api_key)
         chap_summaries.append(chap_summary)
 
     return chap_summaries
@@ -274,7 +274,7 @@ def summary_entire_video(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
     obj.get_data()
 
     unified_transcript = " ".join([item["text"] for item in obj.transcript])
-    summary = gpt.get_whole_transcript_summary(unified_transcript)
+    summary = gpt.get_whole_transcript_summary(unified_transcript, api_key=api_key)
 
     return summary
 
@@ -284,7 +284,7 @@ def summary_in_one_sentence(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> st
     obj.get_data()
 
     unified_transcript = " ".join([item["text"] for item in obj.transcript])
-    summary = gpt.get_one_sentence_summary(unified_transcript, obj.title)
+    summary = gpt.get_one_sentence_summary(unified_transcript, obj.title, api_key=api_key)
     return summary
 
 
