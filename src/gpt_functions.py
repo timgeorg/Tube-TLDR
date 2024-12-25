@@ -47,6 +47,58 @@ def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini') -> str:
     return result
 
 
+def get_whole_transcript_summary(transcript: str) -> str:
+    """
+    Generates a summary for the entire transcript. 
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    response = client.chat.completions.create(
+        model='gpt-4o-mini',
+        messages=[
+            {'role': 'system', 
+            'content': 
+                'Summarize the following transcript of a podcast. \
+                    Do not only list the topics they talk about, but briefly explain every idea you mention in the summary. \
+                    Still try to keep it as short as possible. Use bullet points if possible.'},
+
+            {'role': 'user', 'content': transcript}
+        ],
+        temperature=0.08,
+        max_tokens=1024,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+    result = response.choices[0].message.content
+    return result
+
+def get_one_sentence_summary(transcript: str, title="") -> str:
+    """
+    Generates a one-sentence summary for the entire transcript. 
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    response = client.chat.completions.create(
+        model='gpt-4o-mini',
+        messages=[
+            {'role': 'system', 
+            'content': 
+                'Try to summarize the following transcript in EXACTLY ONE SENTENCE. It can be longer if necessary to conserve information.\
+                Here is the available title: ' + title + '\n\n Add the title as a markdown #### heading.'},
+
+            {'role': 'user', 'content': transcript}
+        ],
+        temperature=0.08,
+        max_tokens=1024,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+    result = response.choices[0].message.content
+    return result
+
+
 def get_minimal_chapter_summary(api_key: str, section: Dict, model: str = 'gpt-4o-mini') -> str:
     client = OpenAI(api_key=api_key)
 
@@ -96,26 +148,4 @@ def get_unified_summary(api_key: str, sections: List[Dict]) -> str:
     return result
 
 
-def get_whole_transcript_summary(transcript: str) -> str:
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-    response = client.chat.completions.create(
-        model='gpt-4o-mini',
-        messages=[
-            {'role': 'system', 
-            'content': 
-                'Summarize the following transcript of a podcast. \
-                    Do not only list the topics they talk about, but briefly explain every idea you mention in the summary. \
-                    Still try to keep it as short as possible. Use bullet points if possible.'},
-
-            {'role': 'user', 'content': transcript}
-        ],
-        temperature=0.08,
-        max_tokens=1024,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0,
-    )
-
-    result = response.choices[0].message.content
-    return result

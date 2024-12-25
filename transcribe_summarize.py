@@ -279,6 +279,15 @@ def summary_entire_video(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
     return summary
 
 
+def summary_in_one_sentence(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    obj.get_data()
+
+    unified_transcript = " ".join([item["text"] for item in obj.transcript])
+    summary = gpt.get_one_sentence_summary(unified_transcript, obj.title)
+    return summary
+
+
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")

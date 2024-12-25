@@ -1,10 +1,12 @@
+# Import necessary libraries
+import re
 import streamlit as st
+import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
-import streamlit_authenticator as stauth
-import re
 
-from transcribe_summarize import summary_entire_video, get_video, summary_by_chapters
+# User Defined Libraries
+import transcribe_summarize as ts
 
 
 with open('config.yaml') as file:
@@ -37,6 +39,11 @@ elif st.session_state['authentication_status']:
     youtube_url = st.text_input("Enter YouTube URL:")
 
     # Button to generate summary
+    if st.button("Clear"):
+        for key in st.session_state.keys():
+            del st.session_state[key]
+        st.rerun()
+
     if st.button("Load Video"):
         if youtube_url:
             # Regular expression to check if the URL is a valid YouTube link
@@ -48,7 +55,7 @@ elif st.session_state['authentication_status']:
                 st.write("Please enter a valid YouTube URL.")
             else:
                 with st.spinner('Getting video ...'):
-                    st.session_state.youtube_video = get_video(youtube_url)
+                    st.session_state.youtube_video = ts.get_video(youtube_url)
                     has_description = bool(st.session_state.youtube_video.description)
                     has_transcript = bool(st.session_state.youtube_video.transcript)
                     if not has_transcript:
@@ -79,22 +86,25 @@ elif st.session_state['authentication_status']:
 
         summary_by_chapters_result = None
         summary_entire_video_result = None
+        summary_one_sentence_result = None
 
         with col1:
             if st.button("Summarize by Chapters"):
                 with st.spinner('Summarizing video by chapters...'):
-                    summary_by_chapters_result = summary_by_chapters(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+                    summary_by_chapters_result = ts.summary_by_chapters(st.session_state.youtube_video.url, st.secrets["API_KEY"])
 
         with col2:
             if st.button("Summarize Entire Video"):
                 with st.spinner('Summarizing entire video...'):
-                    summary_entire_video_result = summary_entire_video(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+                    summary_entire_video_result = ts.summary_entire_video(st.session_state.youtube_video.url, st.secrets["API_KEY"])
 
         with col3:
             if st.button("One Sentence Summary"):
                 with st.spinner('Summarizing video in one sentence...'):
-                    pass
-                    # summary_entire_video_result = summary_in_one_sentence(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+                    summary_one_sentence_result = ts.summary_in_one_sentence(
+                        url=st.session_state.youtube_video.url, 
+                        api_key=st.secrets["API_KEY"], 
+                    )
 
         with col4:
             if st.button("Option 4"):
@@ -108,3 +118,7 @@ elif st.session_state['authentication_status']:
         if summary_entire_video_result:
             st.write("Summary of Entire Video:")
             st.write(summary_entire_video_result)
+
+        if summary_one_sentence_result:
+            st.write("One Sentence Summary:")
+            st.write(summary_one_sentence_result)
