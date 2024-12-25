@@ -4,7 +4,7 @@ from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 import re
 
-from transcribe_summarize import example_summary, get_video
+from transcribe_summarize import summary_entire_video, get_video, summary_by_chapters
 
 
 with open('config.yaml') as file:
@@ -64,6 +64,7 @@ elif st.session_state['authentication_status']:
                         st.markdown(f"- **Duration:** {st.session_state.youtube_video.duration}")
                         st.markdown(f"- **Description available:** {bool(st.session_state.youtube_video.description)}")
                         st.markdown(f"- **Transcript available:** {bool(st.session_state.youtube_video.transcript)}")
+                        st.markdown(f"- **Timestamped Chapters available:** {bool(st.session_state.youtube_video.chapters)}")
 
                     
 
@@ -74,9 +75,26 @@ elif st.session_state['authentication_status']:
 
     # Maintain the state of the second button
     if 'youtube_video' in st.session_state and st.session_state.youtube_video:
-        if st.button("Summarize"):
-            with st.spinner('Summarizing video ...'):
-                summary = example_summary(st.session_state.youtube_video.url, st.secrets["API_KEY"])
-                st.write("Summary:")
-                for chapter in summary:
-                    st.write(chapter)
+        col1, col2 = st.columns(2)
+
+        summary_by_chapters_result = None
+        summary_entire_video_result = None
+
+        with col1:
+            if st.button("Summarize by Chapters"):
+                with st.spinner('Summarizing video by chapters...'):
+                    summary_by_chapters_result = summary_by_chapters(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+
+        with col2:
+            if st.button("Summarize Entire Video"):
+                with st.spinner('Summarizing entire video...'):
+                    summary_entire_video_result = summary_entire_video(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+
+        if summary_by_chapters_result:
+            st.write("Summary by Chapters:")
+            for chapter in summary_by_chapters_result:
+                st.write(chapter)
+
+        if summary_entire_video_result:
+            st.write("Summary of Entire Video:")
+            st.write(summary_entire_video_result)

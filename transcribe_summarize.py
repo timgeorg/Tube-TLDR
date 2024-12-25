@@ -149,8 +149,19 @@ class YouTubeVideo(Logger):
         raise Exception("Description not found in meta tag or paragraph tag.")
 
 
-    def _get_chapters(self):
-        return None
+    def _get_chapters(self) -> bool:
+        """
+        Checks if the description contains "0:00" or "00:00".
+        Returns:
+            bool: True if "0:00" or "00:00" is found in the description, False otherwise.
+        """
+        self.logger.info(f"Checking for timestamps in description ...")
+        if "0:00" in self.description or "00:00" in self.description:
+            self.logger.info(f"Timestamps found in description.")
+            return True
+        else:
+            self.logger.info(f"No timestamps found in description.")
+            return False
     
 
     def _convert_transcript_to_timedelta(self, data):
@@ -221,7 +232,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
             messages=[
                 {'role': 'user', 
                 'content': 
-                    'Convert the following youtube video description into a JSON list with "timestamp" and "content" keys and values.\n \
+                    'Convert the following youtube video description into a JSON list with "timestamp" and "topic" keys and values.\n \
                     Use this format: [{"timestamp": "00:00:00", "topic": "Introduction"}, {"timestamp": "00:01:30", "topic": "Chapter 1"}]\n \
                     Here is the Video Description with the timestamps shall be extracted \n\n' + description},
             ],
@@ -339,8 +350,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
     def get_chapter_summary(self, section, model='gpt-4o-mini'):
 
         client = OpenAI(api_key=self.api_key)
-
-        self.logger.info(f"Getting summary for section: {section["topic"]}")
+        self.logger.info(f"Getting summary for section: {section['topic']}")
 
         response = client.chat.completions.create(
             model=model,
@@ -353,7 +363,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
                         Create Bullet Points, but dont shorten the idea of the content. Explain the topic briefly and not that they talk about it in the video. \
                         If they talk about the 5 things or the 9 types or something like that, list them. \
                         Answer the question thats given in the topic or chapter title if available. \
-                        Put the topic with timestamp (in h, min, sec) in the format "hh:mm:ss" as a heading.\
+                        Put the topic with timestamp (in h, min, sec) [if available] in the format "hh:mm:ss" or "mm:ss" as a heading in the format: "Heading Topic (00:34)"\
                         Every Heading should be a markdown ## heading. If there is no heading title (eg. just Chapter 1), create a heading out of the content provided. \
                         Try to keep it as short as possible, but as long as necessary. '},
 
@@ -364,9 +374,14 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0,
+            stream=True
         )
 
-        result = response.choices[0].message.content
+        result = ""
+        for chunk in response:
+            if chunk.choices[0].delta.content is not None:
+                result += chunk.choices[0].delta.content
+
         return result
     
 
@@ -538,10 +553,48 @@ def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
     return chap_summaries
 
 
+def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list | str:
+    """
+
+    """
+    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    obj.get_data()
+    outline = obj.get_outline(obj.description)
+    
+    if obj.transcript is None:
+        ErrorMessage = f"Could not retrieve a transcript for the video {url}! \
+        This is most likely caused by: \
+        \n\nSubtitles are disabled for this video. \
+        \n\nOpen the transcript in YouTube manually and try again. \
+        This may resolve the issue."
+        print(ErrorMessage)
+        return ErrorMessage
+    
+    outline = obj._convert_timestamps(outline)
+    sections = obj.link_content_to_outline(content=obj.transcript, outline=outline)
+    chap_summaries = []
+
+    for section in sections:
+        chap_summary = obj.get_chapter_summary(section)
+        chap_summaries.append(chap_summary)
+
+    return chap_summaries
+
+
+def summary_entire_video(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    obj.get_data()
+
+    unified_transcript = " ".join([item["text"] for item in obj.transcript])
+    summary = obj.get_whole_transcript_summary(unified_transcript)
+
+    return summary
+
+
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")
-    example_summary(url=url)
+    summary_by_chapters(url=url)
 
 
 
