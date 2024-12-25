@@ -75,7 +75,7 @@ elif st.session_state['authentication_status']:
 
     # Maintain the state of the second button
     if 'youtube_video' in st.session_state and st.session_state.youtube_video:
-        col1, col2 = st.columns(2)
+        col1, col2, col3, col4 = st.columns(4)
 
         summary_by_chapters_result = None
         summary_entire_video_result = None
@@ -89,6 +89,16 @@ elif st.session_state['authentication_status']:
             if st.button("Summarize Entire Video"):
                 with st.spinner('Summarizing entire video...'):
                     summary_entire_video_result = summary_entire_video(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+
+        with col3:
+            if st.button("One Sentence Summary"):
+                with st.spinner('Summarizing video in one sentence...'):
+                    pass
+                    # summary_entire_video_result = summary_in_one_sentence(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+
+        with col4:
+            if st.button("Option 4"):
+                st.write("Option 4 selected")
 
         if summary_by_chapters_result:
             st.write("Summary by Chapters:")
