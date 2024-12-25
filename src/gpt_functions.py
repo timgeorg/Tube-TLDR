@@ -3,7 +3,7 @@ import os
 from typing import List, Dict
 
 
-def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini') -> str:
+def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini', api_key=os.getenv("OPENAI_API_KEY")) -> str:
     """
     Generates a summary for a given section of a video using the specified OpenAI model.
     Args:
@@ -12,7 +12,7 @@ def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini') -> str:
     Returns:
         str: The generated summary of the section.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = OpenAI(api_key=api_key)
 
     response = client.chat.completions.create(
         model=model,
@@ -47,11 +47,11 @@ def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini') -> str:
     return result
 
 
-def get_whole_transcript_summary(transcript: str) -> str:
+def get_whole_transcript_summary(transcript: str, api_key=os.getenv("OPENAI_API_KEY")) -> str:
     """
     Generates a summary for the entire transcript. 
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = OpenAI(api_key=api_key)
 
     response = client.chat.completions.create(
         model='gpt-4o-mini',
@@ -73,11 +73,11 @@ def get_whole_transcript_summary(transcript: str) -> str:
     result = response.choices[0].message.content
     return result
 
-def get_one_sentence_summary(transcript: str, title="") -> str:
+def get_one_sentence_summary(transcript: str, title="", api_key=os.getenv("OPENAI_API_KEY")) -> str:
     """
     Generates a one-sentence summary for the entire transcript. 
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = OpenAI(api_key=api_key)
 
     response = client.chat.completions.create(
         model='gpt-4o-mini',

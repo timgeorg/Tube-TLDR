@@ -91,12 +91,18 @@ elif st.session_state['authentication_status']:
         with col1:
             if st.button("Summarize by Chapters"):
                 with st.spinner('Summarizing video by chapters...'):
-                    summary_by_chapters_result = ts.summary_by_chapters(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+                    summary_by_chapters_result = ts.summary_by_chapters(
+                        url=st.session_state.youtube_video.url, 
+                        api_key=st.secrets["API_KEY"]
+                    )
 
         with col2:
             if st.button("Summarize Entire Video"):
                 with st.spinner('Summarizing entire video...'):
-                    summary_entire_video_result = ts.summary_entire_video(st.session_state.youtube_video.url, st.secrets["API_KEY"])
+                    summary_entire_video_result = ts.summary_entire_video(
+                        url=st.session_state.youtube_video.url, 
+                        api_key=st.secrets["API_KEY"]
+                    )
 
         with col3:
             if st.button("One Sentence Summary"):
