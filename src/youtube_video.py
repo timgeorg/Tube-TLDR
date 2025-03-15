@@ -26,7 +26,7 @@ class YouTubeVideo(Logger):
         self.channel = self._get_channel()
         self.duration = self._get_duration()
         self.description = self._get_description()
-        self.chapters = self._get_chapters()
+        self.chapters = self._check_for_timestamps()
         self.transcript = self._get_transcript()
         self.logger.info(f"Data successfully retrieved for Video")
 
@@ -147,7 +147,7 @@ class YouTubeVideo(Logger):
         raise Exception("Description not found in meta tag or paragraph tag.")
 
 
-    def _get_chapters(self) -> bool:
+    def _check_for_timestamps(self) -> bool:
         """
         Checks if the description contains "0:00" or "00:00".
         Returns:
@@ -160,6 +160,32 @@ class YouTubeVideo(Logger):
         else:
             self.logger.info(f"No timestamps found in description.")
             return False
+        
+    
+    def _extract_chapters(self):
+        """
+        Extracts the chapters from the description of a YouTube video.
+        Args:
+            description (str): The description of the YouTube video.
+        Returns:
+            list: A list of dictionaries containing the chapters with 'start' and 'title' keys.
+        """
+        # TODO: Add support for timestamps in the format "00:00:00"
+        # TODO: Test and finalize
+        self.logger.info(f"Extracting chapters ...")
+        chapters = []
+        # Regular expression to match timestamps in the format "0:00" or "00:00"
+        timestamp_regex = re.compile(r"\b\d{1,2}:\d{2}\b")
+        # Find all timestamps in the description
+        timestamps = timestamp_regex.findall(self.description)
+        # Extract the chapter titles
+        chapter_titles = re.split(timestamp_regex, self.description)[1:]
+        # Create a list of dictionaries with 'start' and 'title' keys
+        for timestamp, title in zip(timestamps, chapter_titles):
+            start = timedelta(minutes=int(timestamp.split(":")[0]), seconds=int(timestamp.split(":")[1]))
+            chapters.append({"start": start, "title": title.strip()})
+        self.logger.info(f"Chapters: {chapters}")
+        return chapters
     
 
     def _convert_transcript_to_timedelta(self, data):
