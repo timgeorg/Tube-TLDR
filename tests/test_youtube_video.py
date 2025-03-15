@@ -1,22 +1,12 @@
+# Let Python locate the source code
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-
+# Testing
 import unittest
-# Native Libraries
-import os
-import re
-import sys
-import json
-import requests
-from datetime import datetime, timedelta
-# External Libraries
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv # pip install python-dotenv
-from youtube_transcript_api import YouTubeTranscriptApi
-from openai import OpenAI # OR: from openai import AzureOpenAI
-# # User-defined Imports
+# User-defined Imports
 from src.youtube_video import YouTubeVideo
 from src.logger import Logger
+
 
 # Mock the YouTubeVideo class
 class MockYouTubeVideo(Logger):
