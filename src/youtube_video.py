@@ -28,6 +28,7 @@ class YouTubeVideo(Logger):
         self.description = self._get_description()
         self.chapters = self._check_for_timestamps()
         self.transcript = self._get_transcript()
+        self.transcript_with_chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
 
     
