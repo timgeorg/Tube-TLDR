@@ -3,14 +3,14 @@ This module provides the YouTubeVideo class for extracting metadata, description
 Classes:
     YouTubeVideo: A class to represent a YouTube video and extract its metadata, description, chapters, and transcript.
 """
-# Standard Libraries
+# Native Libraries
 import re
 from datetime import timedelta
-# Third-Party Libraries
+# External Libraries
 import requests
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
-# User Defined Libraries
+# User-defined Imports
 from logger import Logger
 
 

@@ -1,15 +1,9 @@
 # Native Libraries
 import json
 import os
-import re
-import requests
-import sys
 from datetime import datetime, timedelta
 # External Libraries
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv # pip install python-dotenv
 from openai import OpenAI # OR: from openai import AzureOpenAI
-from youtube_transcript_api import YouTubeTranscriptApi
 # User-defined Libraries
 import gpt_functions as gpt
 from youtube_video import YouTubeVideo
