@@ -137,5 +137,31 @@ class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
         function_output = mock._extract_chapters()
         self.assertEqual(function_output, expected_output)
 
+    def test_extract_chapters_real_example_TimSturmer_Analogicas(self):
+        description_example = """
+            Visit: Revelaciones Analògicas // Selbstportrait im Studio – Vom Negativ bis zum Abzug
+            00:00 Willkommen im Studio
+            00:41 Miguel’s Vision & das Setup 
+            07:48 Meine Selbst-Portrait-Session 
+            10:01 Filmentwicklung – Die analoge Küche
+            13:17 Das Negativ & Darkroom-Printing
+            19:35 Ein perfektes Portrait
+            20:39 Der krönende Abschluss, so geht’s weiter! 
+        """
+        expected_output = [
+            {"timestamp": "00:00", "content": "Willkommen im Studio"},
+            {"timestamp": "00:41", "content": "Miguel’s Vision & das Setup"},
+            {"timestamp": "07:48", "content": "Meine Selbst-Portrait-Session"},
+            {"timestamp": "10:01", "content": "Filmentwicklung – Die analoge Küche"},
+            {"timestamp": "13:17", "content": "Das Negativ & Darkroom-Printing"},
+            {"timestamp": "19:35", "content": "Ein perfektes Portrait"},
+            {"timestamp": "20:39", "content": "Der krönende Abschluss, so geht’s weiter!"}
+        ]
+        mock = MockYouTubeVideo()
+        mock.description = description_example
+        function_output = mock._extract_chapters()
+        self.assertEqual(function_output, expected_output)
+
+
 if __name__ == '__main__':
     unittest.main()
