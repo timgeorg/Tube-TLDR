@@ -174,17 +174,14 @@ class YouTubeVideo(Logger):
         # TODO: Test and finalize
         self.logger.info(f"Extracting chapters ...")
         chapters = []
+
         # Regular expression to match timestamps in the format "0:00" or "00:00"
         timestamp_regex = re.compile(r"\b\d{1,2}:\d{2}\b")
-        # Find all timestamps in the description
         timestamps = timestamp_regex.findall(self.description)
-        # Extract the chapter titles
         chapter_titles = re.split(timestamp_regex, self.description)[1:]
-        # Create a list of dictionaries with 'start' and 'title' keys
+
         for timestamp, title in zip(timestamps, chapter_titles):
-            start = timedelta(minutes=int(timestamp.split(":")[0]), seconds=int(timestamp.split(":")[1]))
-            chapters.append({"start": start, "title": title.strip()})
-        self.logger.info(f"Chapters: {chapters}")
+            chapters.append({"timestamp": timestamp, "content": title.strip()})
         return chapters
     
 

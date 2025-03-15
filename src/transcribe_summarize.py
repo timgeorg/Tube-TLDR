@@ -71,7 +71,15 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     def _convert_timestamps(self, result: dict) -> list:
-
+        """
+        Converts timestamps in the given result dictionary from string format to timedelta objects.
+        Args:
+            result (dict): A dictionary containing a list of timestamps in string format under the key "timestamps".
+        Returns:
+            list: A list of dictionaries with the timestamps converted to timedelta objects.
+        Raises:
+            ValueError: If a timestamp is in an unexpected format.
+        """
         outlist = result["timestamps"]
 
         for item in outlist:
@@ -88,8 +96,15 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
         return outlist
 
 
-    def link_content_to_outline(self, content, outline):
-
+    def link_content_to_outline(self, content: list, outline: list) -> list[dict]:
+        """
+        Group the transcript content into sections based on the video outline
+        Args:
+            content (list): List of dictionaries containing the transcript content
+            outline (list): List of dictionaries containing the video outline
+        Returns:
+            list: List of dictionaries containing the video outline with the content linked to each section
+        """
         for item in outline:
             item["content"] = []
             start_time = item["timestamp"]
