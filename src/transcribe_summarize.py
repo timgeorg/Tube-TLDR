@@ -14,8 +14,6 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import gpt_functions as gpt
 from youtube_video import YouTubeVideo
 from logger import Logger
-# Add Project Root to sys.path for Unit Tests
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = Logger.create_logger(name=__name__)
 

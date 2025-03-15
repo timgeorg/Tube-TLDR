@@ -1,5 +1,6 @@
+# 
 import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 import unittest
 # Native Libraries
@@ -14,9 +15,10 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv # pip install python-dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
 from openai import OpenAI # OR: from openai import AzureOpenAI
+# User-defined Imports
+from src.transcribe_summarize import YouTubeTranscribeSummarize
+from src.youtube_video import YouTubeVideo
 
-
-from transcribe_summarize import YouTubeVideo, YouTubeTranscribeSummarize
 
 class Test_YouTubeVideo_Init(unittest.TestCase):
     def test_init(self):
@@ -83,8 +85,6 @@ class Test_YouTubeTranscribeSummarize_GetOutline(unittest.TestCase):
         outline = video.get_outline(video.description)
         print(outline)
 
-
-        
         expected_output = [
         {"timestamp": "0:00", "content": "Intro"},
         {"timestamp": "1:20", "content": "Gibt es Delfine die intensiven Kontakt zu Menschen suchen?"},
@@ -106,8 +106,6 @@ class Test_YouTubeTranscribeSummarize_GetOutline(unittest.TestCase):
         {"timestamp": "3:23:15", "content": "Warum möchte niemand für Umweltschutz bezahlen und wie finanzierst du dich?"},
         {"timestamp": "3:44:00", "content": "Würdest du nochmal Biologie studieren?"}
         ]
-
-
 
 
 if __name__ == '__main__':

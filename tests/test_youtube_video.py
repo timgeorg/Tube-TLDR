@@ -1,5 +1,5 @@
 import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 import unittest
 # Native Libraries
@@ -14,9 +14,9 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv # pip install python-dotenv
 from youtube_transcript_api import YouTubeTranscriptApi
 from openai import OpenAI # OR: from openai import AzureOpenAI
-
+# # User-defined Imports
 from src.youtube_video import YouTubeVideo
-from logger import Logger
+from src.logger import Logger
 
 # Mock the YouTubeVideo class
 class MockYouTubeVideo(Logger):
