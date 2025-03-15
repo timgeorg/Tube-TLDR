@@ -21,6 +21,7 @@ class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
 
     def setUp(self):
         self.mock = MockYouTubeVideo()
+        self.mock.chapters = True
         return super().setUp()
 
     def test_extract_chapters(self):
@@ -150,6 +151,12 @@ class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
         mock = MockYouTubeVideo()
         mock.description = description_example
         function_output = mock._extract_chapters()
+        self.assertEqual(function_output, expected_output)
+
+    def test_extract_chapters_no_timestamps(self):
+        self.mock.chapters = False
+        expected_output = None
+        function_output = self.mock._extract_chapters()
         self.assertEqual(function_output, expected_output)
 
 

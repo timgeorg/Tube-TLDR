@@ -164,12 +164,15 @@ class YouTubeVideo(Logger):
     
     def _extract_chapters(self):
         """
-        Extracts the chapters from the description of a YouTube video.
+        If available, extract the chapters from the description of a YouTube video.
         Args:
             description (str): The description of the YouTube video.
         Returns:
             list: A list of dictionaries containing the chapters with 'timestamp' and 'content' keys.
         """
+        if not self.chapters:
+            return None
+        
         self.logger.info(f"Extracting chapters ...")
         chapters = []
 
