@@ -16,7 +16,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from openai import OpenAI # OR: from openai import AzureOpenAI
 
 from src.youtube_video import YouTubeVideo
-from Utilities.logger import Logger
+from logger import Logger
 
 # Mock the YouTubeVideo class
 class MockYouTubeVideo(Logger):

@@ -11,9 +11,9 @@ from dotenv import load_dotenv # pip install python-dotenv
 from openai import OpenAI # OR: from openai import AzureOpenAI
 from youtube_transcript_api import YouTubeTranscriptApi
 # User-defined Libraries
-import src.gpt_functions as gpt
-from src.youtube_video import YouTubeVideo
-from Utilities.logger import Logger
+import gpt_functions as gpt
+from youtube_video import YouTubeVideo
+from logger import Logger
 # Add Project Root to sys.path for Unit Tests
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -70,17 +70,16 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
             return None
 
 
-    def _convert_timestamps(self, result: dict) -> list:
+    def _convert_timestamps(self, outlist: dict) -> list:
         """
         Converts timestamps in the given result dictionary from string format to timedelta objects.
         Args:
-            result (dict): A dictionary containing a list of timestamps in string format under the key "timestamps".
+            outlist (dict): A dictionary containing the list of timestamps to convert.
         Returns:
             list: A list of dictionaries with the timestamps converted to timedelta objects.
         Raises:
             ValueError: If a timestamp is in an unexpected format.
         """
-        outlist = result["timestamps"]
 
         for item in outlist:
             time_parts = item["timestamp"].split(":")
@@ -118,6 +117,7 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
                     if entry["timestamp"] >= start_time:
                         item["content"].append(entry["text"])
 
+        # Join the content into a single string for each section
         for item in outline:
             item["content"] = " ".join(item["content"])
 
@@ -125,6 +125,8 @@ class YouTubeTranscribeSummarize(YouTubeVideo):
 
 
     def link_transcript_without_outline(self, content):
+
+        # TODO: Work in progress
 
         # get max length of content
         content_length = content[-1]["timestamp"] # get timedelta object of last entry
@@ -261,8 +263,9 @@ def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list |
 
     """
     obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    print(type(obj))
     obj.get_data()
-    outline = obj.get_outline(obj.description)
+    outline = obj._extract_chapters()
     
     if obj.transcript is None:
         ErrorMessage = f"Could not retrieve a transcript for the video {url}! \

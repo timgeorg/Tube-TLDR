@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 # User Defined Libraries
-from Utilities.logger import Logger
+from logger import Logger
 
 
 class YouTubeVideo(Logger):
