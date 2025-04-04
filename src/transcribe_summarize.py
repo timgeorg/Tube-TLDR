@@ -17,50 +17,6 @@ class YouTubeTranscribeSummarize(Logger):
         self.logger = self.create_logger(name=self.__class__.__name__)
         self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
 
-    def get_outline(self, description):
-
-        client = OpenAI(api_key=self.api_key)
-
-        response = client.chat.completions.create(
-            model='gpt-4o-mini',
-            messages=[
-                {'role': 'user', 
-                'content': 
-                    'Convert the following youtube video description into a JSON list with "timestamp" and "topic" keys and values.\n \
-                    Use this format: [{"timestamp": "00:00:00", "topic": "Introduction"}, {"timestamp": "00:01:30", "topic": "Chapter 1"}]\n \
-                    Here is the Video Description with the timestamps shall be extracted \n\n' + description},
-            ],
-            temperature=0.2,
-            # max_tokens=,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-            response_format={ "type": "json_object" }
-        )
-
-        result = response.choices[0].message.content
-        result = result.replace("\n", "").rstrip().lstrip().replace("  ", "")
-
-        try:
-            result = json.loads(result)
-            print(result)
-            if not result["timestamps"]:
-                self.logger.info(f"No outline found in description.")
-                return None
-            elif type(result["timestamps"]) == str:
-                self.logger.info(f"No Outline found in description. Creating synthetic outline.")
-                return None
-            
-            elif type(result["timestamps"]) == list:
-                self.logger.info(f"Outline found in description. Returning outline.")
-                return result
-            else:
-                self.logger.info(f"Outline found in description. Returning outline.")
-                return result
-        except Exception as e:
-            self.logger.info(f"No outline found in description: {e}")
-            return None
-
 
     def _convert_timestamps(self, outlist: dict) -> list:
         """
