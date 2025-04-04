@@ -196,7 +196,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _convert_transcript_to_timedelta(self, data):
+    def _convert_transcript_to_timedelta(self, data: list[dict]) -> list[dict]:
         """
         Converts transcript data to include end time, minutes, seconds, and timestamp.
         Args:

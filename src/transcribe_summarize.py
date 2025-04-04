@@ -18,31 +18,6 @@ class YouTubeTranscribeSummarize(Logger):
         self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
 
 
-    def _convert_timestamps(self, outlist: dict) -> list:
-        """
-        Converts timestamps in the given result dictionary from string format to timedelta objects.
-        Args:
-            outlist (dict): A dictionary containing the list of timestamps to convert.
-        Returns:
-            list: A list of dictionaries with the timestamps converted to timedelta objects.
-        Raises:
-            ValueError: If a timestamp is in an unexpected format.
-        """
-
-        for item in outlist:
-            time_parts = item["timestamp"].split(":")
-            if len(time_parts) == 2:  # Format is "MM:SS"
-                minutes, seconds = map(int, time_parts)
-                item["timestamp"] = timedelta(minutes=minutes, seconds=seconds)
-            elif len(time_parts) == 3:  # Format is "HH:MM:SS"
-                hours, minutes, seconds = map(int, time_parts)
-                item["timestamp"] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
-            else:
-                raise ValueError(f"Unexpected timestamp format: {item['timestamp']}")
-
-        return outlist
-
-
     def link_content_to_outline(self, content: list, outline: list) -> list[dict]:
         """
         Group the transcript content into sections based on the video outline
