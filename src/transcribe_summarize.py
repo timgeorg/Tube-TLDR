@@ -301,7 +301,8 @@ def summary_in_one_sentence(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> st
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")
-    summary_by_chapters(url=url)
+    # summary_by_chapters(url=url)
+    summary_entire_video(url=url)
 
 
 

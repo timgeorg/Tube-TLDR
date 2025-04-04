@@ -26,7 +26,7 @@ class YouTubeVideo(Logger):
         self.channel = self._get_channel()
         self.duration = self._get_duration()
         self.description = self._get_description()
-        self.chapters = self._check_for_timestamps()
+        self.chapters: bool = self._check_for_timestamps()
         self.transcript = self._get_transcript()
         self.transcript_with_chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
@@ -61,8 +61,6 @@ class YouTubeVideo(Logger):
         Returns:
             str: The title of the YouTube video if successful.
             None: If an error occurs during the retrieval process.
-        Raises:
-            Exception: If an error occurs while retrieving the title.
         """
         self.logger.info(f"Getting title ...")
         title_tag = self.soup.find("meta", property="og:title")
