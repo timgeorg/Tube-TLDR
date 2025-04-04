@@ -1,22 +1,28 @@
-### Further Ideas
+## Tube TLDR — Building The Best YouTube Summarizer
 
-- automatically create an offline database (local version only) [Won't do]
+Welcome to Tube TLDR, a solo passion project with a bold mission:
+**To build the best YouTube summarizer on the internet.**
+
+No more wasting time scrubbing through hour-long videos — get the key takeaways in seconds.
+
+## What Is Tube TLDR?
+
+Tube TLDR is a tool that takes any YouTube video and gives you a concise, accurate summary powered by cutting-edge AI. Whether it’s a 2-hour podcast, an educational lecture, or a trending tech review, Tube TLDR distills the core ideas for you.
+
+#### Built With
+
+Python, OpenAI & Streamlit <br>
+Docker (coming soon)
+
+
+### Shoutout
+
+If you find this useful, consider starring ⭐ the repo or sharing it with someone who drowns in YouTube videos daily.
+
+### Further Ideas (moving to Issues soon)
 
 - display more infos in the UI (log messages)
 
-- fix the logger bug so only one logger per run can be created [Done]
-
 - implement summaries for short videos without an outline
-- (done) implement summaries for long videos without and outline and self define chapters [needs Refactoring]
-
-- get unity in timestamps in summary headings [Done]
-
-- try TL:DR in Prompts
-
-- Add a functions to to one unified summary based on the video content [Won't do]
-
-- improve and unittest the get outline function [Done]
 
 - write a function to get a dedicated chapter headline when synthetically generated
-
-- display channel name, video name and other metadata at top of the summary (Title and Channel) [Done]
