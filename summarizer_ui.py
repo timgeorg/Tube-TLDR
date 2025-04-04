@@ -72,7 +72,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
         if st.button("Summarize Entire Video"):
             with st.spinner('Summarizing entire video...'):
                 summary_entire_video_result = ts.summary_entire_video(
-                    url=st.session_state.youtube_video.url, 
+                    url=st.session_state.youtube_video, 
                     api_key=st.secrets["API_KEY"]
                 )
 
@@ -80,7 +80,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
         if st.button("One Sentence Summary"):
             with st.spinner('Summarizing video in one sentence...'):
                 summary_one_sentence_result = ts.summary_in_one_sentence(
-                    url=st.session_state.youtube_video.url, 
+                    url=st.session_state.youtube_video, 
                     api_key=st.secrets["API_KEY"], 
                 )
 
