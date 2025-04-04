@@ -6,8 +6,10 @@ from typing import List, Dict
 def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini', api_key=os.getenv("OPENAI_API_KEY")) -> str:
     """
     Generates a summary for a given section of a video using the specified OpenAI model.
+    Model can convert timedelta to string format. (impressive)
     Args:
         section (dict): The section of the video to summarize.
+            keys: 'timestamp' (timedelta), 'heading' (str), content (str)
         model (str, optional): The model to use for generating the summary. Defaults to 'gpt-4o-mini'.
     Returns:
         str: The generated summary of the section.
