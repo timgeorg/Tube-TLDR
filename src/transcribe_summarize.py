@@ -35,6 +35,7 @@ class YouTubeTranscribeSummarize(Logger):
             ValueError: If a timestamp is in an unexpected format.
         """
         for item in chapters:
+            item["timestr"] = item["timestamp"]
             time_parts = item["timestamp"].split(":")
             if len(time_parts) == 2:  # Format is "MM:SS"
                 minutes, seconds = map(int, time_parts)
@@ -53,10 +54,10 @@ class YouTubeTranscribeSummarize(Logger):
         Args:
             content (list): List of dictionaries containing the transcript content
             outline (list): List of dictionaries containing the video outline (chapters)
-                keys: 'timestamp' (timedelta), content (str)
+                keys: 'timestr' (str), 'timestamp' (timedelta), content (str)
         Returns:
             list: List of dictionaries containing the video outline with the content linked to each section
-                keys: 'timestamp (timedelta), 'heading' (str), 'content' (str)
+                keys: 'timestr' (str), 'timestamp (timedelta), 'heading' (str), 'content' (str)
         """
         for item in outline:
             item["heading"] = item["content"]
