@@ -159,6 +159,39 @@ class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
         function_output = self.mock._extract_chapters()
         self.assertEqual(function_output, expected_output)
 
+    def test_extract_chapters_real_example_YCombinator(self):
+        description_example = """
+            Apply for a YC Summer Fellows Grant: https://events.ycombinator.com/summer-fellows\n\n
+            Technical skills build startups—but oftentimes, people skills can save them. 
+            So how do you navigate the disagreements and conflict that inevitably arise with a co-founder? 
+            In this episode of the Lightcone, our hosts share what they've learned for managing these critical, 
+            yet often overlooked challenges, offering advice on how to handle the messy realities that go beyond building.\n\n
+            Chapters (Powered by https://bit.ly/chapterme-yc) -\n00:00 Intro\n01:09 Why you should listen to this episode! \n
+            02:25 Harj’s experience with Patrick Collison of Stripe\n06:39 Hard lessons Garry learned from Posterous \n
+            12:52 Authoritative vs authoritarian \n15:46 Startup pressures lead to self discovery \n
+            19:47 The importance of conflict resolution skills\n24:24 The concept of “over the net”\n
+            27:15 The cultures you come from (work and personal) matter a lot\n34:53 Founders should get outside help  
+            \n36:07 Why you should still find a co-founder despite the challenges\n39:53 Outro + YC Summer Fellow Grants
+        """
+        expected_output = [
+            {"timestamp": "00:00", "content": "Intro"},
+            {"timestamp": "01:09", "content": "Why you should listen to this episode!"},
+            {"timestamp": "02:25", "content": "Harj’s experience with Patrick Collison of Stripe"},
+            {"timestamp": "06:39", "content": "Hard lessons Garry learned from Posterous"},
+            {"timestamp": "12:52", "content": "Authoritative vs authoritarian"},
+            {"timestamp": "15:46", "content": "Startup pressures lead to self discovery"},
+            {"timestamp": "19:47", "content": "The importance of conflict resolution skills"},
+            {"timestamp": "24:24", "content": "The concept of “over the net”"},
+            {"timestamp": "27:15", "content": "The cultures you come from (work and personal) matter a lot"},
+            {"timestamp": "34:53", "content": "Founders should get outside help"},
+            {"timestamp": "36:07", "content": 'Why you should still find a co-founder despite the challenges'},
+            {"timestamp": "39:53", "content": 'Outro + YC Summer Fellow Grants'}
+        ]
+        mock = MockYouTubeVideo()
+        mock.description = description_example
+        function_output = mock._extract_chapters()
+        self.assertEqual(function_output, expected_output)
+
 
 if __name__ == '__main__':
     unittest.main()
