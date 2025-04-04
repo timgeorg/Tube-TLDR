@@ -5,17 +5,17 @@ from datetime import datetime, timedelta
 # External Libraries
 from openai import OpenAI # OR: from openai import AzureOpenAI
 # User-defined Libraries
-import gpt_functions as gpt
-from youtube_video import YouTubeVideo
-from logger import Logger
+import src.gpt_functions as gpt
+from src.youtube_video import YouTubeVideo
+from src.logger import Logger
 
-logger = Logger.create_logger(name=__name__)
 
-class YouTubeTranscribeSummarize(YouTubeVideo):
-
-    def __init__(self, url, api_key=os.getenv('OPENAI_API_KEY')):
-        super().__init__(url)
+class YouTubeTranscribeSummarize(Logger):
+    def __init__(self, youtube_video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')):
         self.api_key = api_key
+        self.youtube_video = youtube_video
+        self.logger = self.create_logger(name=self.__class__.__name__)
+        self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
 
     def get_outline(self, description):
 
@@ -254,22 +254,12 @@ def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list |
     """
 
     """
-    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
+    video = get_video(url=url)
+    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
     print(type(obj))
-    obj.get_data()
-    outline = obj._extract_chapters()
     
-    if obj.transcript is None:
-        ErrorMessage = f"Could not retrieve a transcript for the video {url}! \
-        This is most likely caused by: \
-        \n\nSubtitles are disabled for this video. \
-        \n\nOpen the transcript in YouTube manually and try again. \
-        This may resolve the issue."
-        print(ErrorMessage)
-        return ErrorMessage
+    sections = obj.youtube_video.transcript_with_chapters
     
-    outline = obj._convert_timestamps(outline)
-    sections = obj.link_content_to_outline(content=obj.transcript, outline=outline)
     chap_summaries = []
 
     for section in sections:
