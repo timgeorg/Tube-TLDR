@@ -8,6 +8,7 @@ st.title("YouTube Video Summarizer")
 
 # Input for YouTube URL
 youtube_url = st.text_input("Enter YouTube URL:")
+video = None
 
 # Button to generate summary
 if st.button("Clear"):
@@ -26,8 +27,9 @@ if st.button("Load Video"):
             st.write("Please enter a valid YouTube URL.")
         else:
             with st.spinner('Getting video ...'):
-                st.session_state.youtube_video = ts.YouTubeVideo(url=youtube_url)
-                st.session_state.youtube_video.get_data()
+                video = ts.YouTubeVideo(url=youtube_url)
+                video.get_data()
+                st.session_state.youtube_video = video
                 has_description = bool(st.session_state.youtube_video.description)
                 has_transcript = bool(st.session_state.youtube_video.transcript)
                 if not has_transcript:
@@ -62,7 +64,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
         if st.button("Summarize by Chapters"):
             with st.spinner('Summarizing video by chapters...'):
                 summary_by_chapters_result = ts.summary_by_chapters(
-                    url=st.session_state.youtube_video, 
+                    video=st.session_state.youtube_video, 
                     api_key=st.secrets["API_KEY"]
                 )
 
@@ -88,6 +90,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
 
     if summary_by_chapters_result:
         st.write("Summary by Chapters:")
+        st.markdown(f"{st.session_state.youtube_video.title} by {st.session_state.youtube_video.channel}")
         for chapter in summary_by_chapters_result:
             st.write(chapter)
 

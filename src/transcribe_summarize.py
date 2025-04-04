@@ -245,13 +245,10 @@ def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
     return chap_summaries
 
 
-def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list | str:
+def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> list | str:
     """
 
     """
-    video = YouTubeVideo(url=url)
-    video.get_data()
-
     obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
     sections = obj.youtube_video.transcript_with_chapters
     chap_summaries = []
