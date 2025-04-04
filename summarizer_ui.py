@@ -90,7 +90,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
 
     if summary_by_chapters_result:
         st.write("Summary by Chapters:")
-        st.markdown(f"{st.session_state.youtube_video.title} by {st.session_state.youtube_video.channel}")
+        st.write(f"###{st.session_state.youtube_video.title} by ####{st.session_state.youtube_video.channel}")
         for chapter in summary_by_chapters_result:
             st.write(chapter)
 

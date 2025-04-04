@@ -251,6 +251,7 @@ def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')
     """
     obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
     sections = obj.youtube_video.transcript_with_chapters
+    # TODO: probably not a text but with timestamps in between. Needs to be linked first. 
     chap_summaries = []
 
     for section in sections:
