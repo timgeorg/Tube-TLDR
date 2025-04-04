@@ -45,7 +45,7 @@ if st.button("Load Video"):
                     st.markdown(f"- **Duration:** {st.session_state.youtube_video.duration}")
                     st.markdown(f"- **Description available:** {bool(st.session_state.youtube_video.description)}")
                     st.markdown(f"- **Transcript available:** {bool(st.session_state.youtube_video.transcript)}")
-                    st.markdown(f"- **Timestamped Chapters available:** {bool(st.session_state.youtube_video.chapters)}")
+                    st.markdown(f"- **Timestamped Chapters available:** {bool(st.session_state.youtube_video.chapters_available)}")
 
                 else:
                     st.error("Failed to retrieve video. Please try again.")
@@ -90,7 +90,8 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
 
     if summary_by_chapters_result:
         st.write("Summary by Chapters:")
-        st.write(f"###{st.session_state.youtube_video.title} by ####{st.session_state.youtube_video.channel}")
+        st.write(f"### {st.session_state.youtube_video.title}")
+        st.write(f"#### by {st.session_state.youtube_video.channel}")
         for chapter in summary_by_chapters_result:
             st.write(chapter)
 

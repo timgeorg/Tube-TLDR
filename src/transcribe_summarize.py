@@ -18,6 +18,36 @@ class YouTubeTranscribeSummarize(Logger):
         self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
 
 
+    def convert_timestamps_to_timedelta(self, chapters: dict) -> list:
+        """
+        Converts timestamps in the given result dictionary from string format to timedelta objects.
+        Args:
+            outlist (dict): A dictionary containing the list of timestamps to convert.
+                timestamp (str): The timestamp string to convert.
+                text (str): The text associated with the timestamp.
+            Example:
+                chapters = [
+                    {"timestamp": "00:00:01", "text": "Hello World"},
+                    {"timestamp": "00:02:34", "text": "Goodbye World"}
+                ]
+        Returns:
+            list: A list of dictionaries with the timestamps converted to timedelta objects.
+        Raises:
+            ValueError: If a timestamp is in an unexpected format.
+        """
+        for item in chapters:
+            time_parts = item["timestamp"].split(":")
+            if len(time_parts) == 2:  # Format is "MM:SS"
+                minutes, seconds = map(int, time_parts)
+                item["timestamp"] = timedelta(minutes=minutes, seconds=seconds)
+            elif len(time_parts) == 3:  # Format is "HH:MM:SS"
+                hours, minutes, seconds = map(int, time_parts)
+                item["timestamp"] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+            else:
+                raise ValueError(f"Unexpected timestamp format: {item['timestamp']}")
+        return chapters
+
+
     def link_content_to_outline(self, content: list, outline: list) -> list[dict]:
         """
         Group the transcript content into sections based on the video outline
@@ -27,7 +57,9 @@ class YouTubeTranscribeSummarize(Logger):
         Returns:
             list: List of dictionaries containing the video outline with the content linked to each section
         """
+        print(outline)
         for item in outline:
+            item["heading"] = item["content"]
             item["content"] = []
             start_time = item["timestamp"]
             end_time = outline[outline.index(item) + 1]["timestamp"] if outline.index(item) + 1 < len(outline) else None
@@ -181,7 +213,8 @@ def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')
 
     """
     obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
-    sections = obj.youtube_video.transcript_with_chapters
+    outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
+    sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
     # TODO: probably not a text but with timestamps in between. Needs to be linked first. 
     chap_summaries = []
 

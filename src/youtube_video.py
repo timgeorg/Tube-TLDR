@@ -26,9 +26,9 @@ class YouTubeVideo(Logger):
         self.channel = self._get_channel()
         self.duration = self._get_duration()
         self.description = self._get_description()
-        self.chapters: bool = self._check_for_timestamps()
+        self.chapters_available: bool = self._check_for_timestamps()
         self.transcript = self._get_transcript()
-        self.transcript_with_chapters = self._extract_chapters()
+        self.chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
 
     
@@ -160,6 +160,30 @@ class YouTubeVideo(Logger):
             self.logger.info(f"No timestamps found in description.")
             return False
         
+        
+    def _convert_transcript_to_timedelta(self, data: list[dict]) -> list[dict]:
+        """
+        Converts transcript data to include end time, minutes, seconds, and timestamp.
+        Args:
+            data (list of dict): A list of dictionaries where each dictionary represents a transcript item 
+                with 'start' and 'duration' keys.
+        Returns:
+            list of dict: The modified list of dictionaries with additional keys:
+                - 'end_time': The end time of the transcript item.
+                - 'minutes': The minute part of the end time.
+                - 'seconds': The second part of the end time.
+                - 'timestamp': A timedelta object representing the end time.
+        """
+        for item in data:
+            item["end_time"] = item['start'] + item['duration']
+            end_time = float(item['start']) + float(item['duration'])
+            minutes, seconds = divmod(end_time, 60)
+            item["minutes"] = minutes
+            item["seconds"] = seconds
+            item["timestamp"] = timedelta(minutes=item["minutes"], seconds=item["seconds"])
+
+        return data
+        
     
     def _extract_chapters(self):
         """
@@ -169,7 +193,7 @@ class YouTubeVideo(Logger):
         Returns:
             list: A list of dictionaries containing the chapters with 'timestamp' and 'content' keys.
         """
-        if not self.chapters:
+        if not self.chapters_available:
             return None
         
         self.logger.info(f"Extracting chapters ...")
@@ -194,30 +218,6 @@ class YouTubeVideo(Logger):
         for timestamp, title in zip(timestamps, chapter_titles):
             chapters.append({"timestamp": timestamp, "content": title.strip()})
         return chapters
-    
-
-    def _convert_transcript_to_timedelta(self, data: list[dict]) -> list[dict]:
-        """
-        Converts transcript data to include end time, minutes, seconds, and timestamp.
-        Args:
-            data (list of dict): A list of dictionaries where each dictionary represents a transcript item 
-                with 'start' and 'duration' keys.
-        Returns:
-            list of dict: The modified list of dictionaries with additional keys:
-                - 'end_time': The end time of the transcript item.
-                - 'minutes': The minute part of the end time.
-                - 'seconds': The second part of the end time.
-                - 'timestamp': A timedelta object representing the end time.
-        """
-        for item in data:
-            item["end_time"] = item['start'] + item['duration']
-            end_time = float(item['start']) + float(item['duration'])
-            minutes, seconds = divmod(end_time, 60)
-            item["minutes"] = minutes
-            item["seconds"] = seconds
-            item["timestamp"] = timedelta(minutes=item["minutes"], seconds=item["seconds"])
-
-        return data
     
 
     def _get_transcript(self):
