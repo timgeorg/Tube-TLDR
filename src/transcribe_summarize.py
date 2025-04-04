@@ -17,8 +17,7 @@ class YouTubeTranscribeSummarize(Logger):
         self.logger = self.create_logger(name=self.__class__.__name__)
         self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
 
-
-    def convert_timestamps_to_timedelta(self, chapters: dict) -> list:
+    def convert_timestamps_to_timedelta(self, chapters: dict) -> list[dict]:
         """
         Converts timestamps in the given result dictionary from string format to timedelta objects.
         Args:
@@ -53,11 +52,12 @@ class YouTubeTranscribeSummarize(Logger):
         Group the transcript content into sections based on the video outline
         Args:
             content (list): List of dictionaries containing the transcript content
-            outline (list): List of dictionaries containing the video outline
+            outline (list): List of dictionaries containing the video outline (chapters)
+                keys: 'timestamp' (timedelta), content (str)
         Returns:
             list: List of dictionaries containing the video outline with the content linked to each section
+                keys: 'timestamp (timedelta), 'heading' (str), 'content' (str)
         """
-        print(outline)
         for item in outline:
             item["heading"] = item["content"]
             item["content"] = []
@@ -71,11 +71,9 @@ class YouTubeTranscribeSummarize(Logger):
                 else:
                     if entry["timestamp"] >= start_time:
                         item["content"].append(entry["text"])
-
         # Join the content into a single string for each section
         for item in outline:
             item["content"] = " ".join(item["content"])
-
         return outline
 
 
@@ -208,16 +206,21 @@ def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
     return chap_summaries
 
 
-def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> list | str:
+def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> list[str]:
     """
-
+    Summarizes the YouTube video by chapters.
+    Converts chapter timestamps to timedelta objects and links the transcript content. 
+    Args:
+        video (YouTubeVideo): The YouTube video object.
+        api_key (str): The OpenAI API key.
+    Returns:
+        list[str]: A list of chapter summaries.
     """
     obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
-    # TODO: probably not a text but with timestamps in between. Needs to be linked first. 
-    chap_summaries = []
 
+    chap_summaries = []
     for section in sections:
         chap_summary = gpt.get_chapter_summary(section, api_key=api_key)
         chap_summaries.append(chap_summary)
@@ -225,29 +228,42 @@ def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')
     return chap_summaries
 
 
-def summary_entire_video(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
-    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
-    obj.get_data()
-
-    unified_transcript = " ".join([item["text"] for item in obj.transcript])
+def summary_entire_video(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+    """
+    Summarizes the entire YouTube video.
+    Converts the transcript into a single string and generates a summary.
+    Args:
+        video (YouTubeVideo): The YouTube video object.
+        api_key (str): The OpenAI API key.
+    Returns:
+        str: The summary of the entire video.
+    """
+    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
+    unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
     summary = gpt.get_whole_transcript_summary(unified_transcript, api_key=api_key)
-
     return summary
 
 
-def summary_in_one_sentence(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> str:
-    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
-    obj.get_data()
-
-    unified_transcript = " ".join([item["text"] for item in obj.transcript])
-    summary = gpt.get_one_sentence_summary(unified_transcript, obj.title, api_key=api_key)
+def summary_in_one_sentence(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+    """
+    Generates a one-sentence summary of the entire YouTube video.
+    Converts the transcript into a single string and generates a summary.
+    Args:
+        video (YouTubeVideo): The YouTube video object.
+        api_key (str): The OpenAI API key.
+    Returns:
+        str: The one-sentence summary of the entire video.
+    """
+    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
+    unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
+    summary = gpt.get_one_sentence_summary(unified_transcript, obj.youtube_video.title, api_key=api_key)
     return summary
 
 
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")
-    summary_by_chapters(url=url)
+    # summary_by_chapters(url=url)
     # summary_entire_video(url=url)
 
 
