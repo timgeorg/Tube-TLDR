@@ -158,11 +158,6 @@ class YouTubeTranscribeSummarize(Logger):
         return sections
 
 
-    
-def get_video(url):
-    video = YouTubeVideo(url)
-    video.get_data()
-    return video
 
 
 def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
@@ -254,12 +249,11 @@ def summary_by_chapters(url: str, api_key=os.getenv('OPENAI_API_KEY')) -> list |
     """
 
     """
-    video = get_video(url=url)
+    video = YouTubeVideo(url=url)
+    video.get_data()
+
     obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
-    print(type(obj))
-    
     sections = obj.youtube_video.transcript_with_chapters
-    
     chap_summaries = []
 
     for section in sections:
