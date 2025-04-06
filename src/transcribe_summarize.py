@@ -11,8 +11,7 @@ from src.logger import Logger
 
 
 class YouTubeTranscribeSummarize(Logger):
-    def __init__(self, youtube_video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')):
-        self.api_key = api_key
+    def __init__(self, youtube_video: YouTubeVideo):
         self.youtube_video = youtube_video
         self.logger = self.create_logger(name=self.__class__.__name__)
         self.logger.info(f"Creating YouTubeTranscribeSummarize object for video: {self.youtube_video.url}")
@@ -207,7 +206,7 @@ def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
     return chap_summaries
 
 
-def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> list[str]:
+def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     """
     Summarizes the YouTube video by chapters.
     Converts chapter timestamps to timedelta objects and links the transcript content. 
@@ -229,7 +228,7 @@ def summary_by_chapters(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')
     return chap_summaries
 
 
-def summary_entire_video(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+def summary_entire_video(video: YouTubeVideo, api_key: str) -> str:
     """
     Summarizes the entire YouTube video.
     Converts the transcript into a single string and generates a summary.
@@ -245,7 +244,7 @@ def summary_entire_video(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY'
     return summary
 
 
-def summary_in_one_sentence(video: YouTubeVideo, api_key=os.getenv('OPENAI_API_KEY')) -> str:
+def summary_in_one_sentence(video: YouTubeVideo, api_key: str) -> str:
     """
     Generates a one-sentence summary of the entire YouTube video.
     Converts the transcript into a single string and generates a summary.
