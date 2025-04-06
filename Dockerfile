@@ -14,9 +14,7 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY summarizer_ui.py /app/summarizer_ui.py
-COPY transcribe_summarize.py /app/transcribe_summarize.py
 COPY ./src /app/src
-COPY ./Utilities /app/Utilities
 COPY .streamlit /app/.streamlit
 COPY config.yaml /app/config.yaml
 

@@ -1,6 +1,6 @@
 ## Tube TLDR — Building The Best YouTube Summarizer
 
-Welcome to Tube TLDR, a solo passion project with a bold mission:
+Welcome to Tube TLDR, a solo passion project with a bold mission: <br>
 **To build the best YouTube summarizer on the internet.**
 
 No more wasting time scrubbing through hour-long videos — get the key takeaways in seconds.
