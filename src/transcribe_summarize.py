@@ -216,7 +216,7 @@ def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     Returns:
         list[str]: A list of chapter summaries.
     """
-    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
+    obj = YouTubeTranscribeSummarize(youtube_video=video)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
 
@@ -238,7 +238,7 @@ def summary_entire_video(video: YouTubeVideo, api_key: str) -> str:
     Returns:
         str: The summary of the entire video.
     """
-    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
+    obj = YouTubeTranscribeSummarize(youtube_video=video)
     unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
     summary = gpt.get_whole_transcript_summary(unified_transcript, api_key=api_key)
     return summary
@@ -254,7 +254,7 @@ def summary_in_one_sentence(video: YouTubeVideo, api_key: str) -> str:
     Returns:
         str: The one-sentence summary of the entire video.
     """
-    obj = YouTubeTranscribeSummarize(youtube_video=video, api_key=api_key)
+    obj = YouTubeTranscribeSummarize(youtube_video=video)
     unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
     summary = gpt.get_one_sentence_summary(unified_transcript, obj.youtube_video.title, api_key=api_key)
     return summary
