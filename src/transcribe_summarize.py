@@ -75,7 +75,7 @@ class YouTubeTranscribeSummarize(Logger):
                     if start_time <= entry["timestamp"] < end_time:
                         item["content"].append(entry["text"])
                         # Transcript for short form content creation
-                        if "transcript" not in item and short_form = True:
+                        if "transcript" not in item and short_form == True:
                             item["transcript"] = []
                         item["transcript"].append({
                             "text": entry["text"],
@@ -249,10 +249,12 @@ def create_shorts_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline, short_form=True)
+    shorts_per_chapter = []
     for section in sections:
         chapter_script = gpt.rework_transcript_to_sentences(section)
-        shorts_script = gpt.create_shorts_script(chapter_script))
-
+        shorts_script = gpt.create_shorts_script(chapter_script)
+        shorts_per_chapter.append(shorts_script + section["heading"])
+    return shorts_per_chapter
 
 
 def summary_entire_video(video: YouTubeVideo, api_key: str) -> str:

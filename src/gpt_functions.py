@@ -160,7 +160,8 @@ def rework_transcript_to_sentences(transcript_item: dict) -> dict:
         messages=[
             {'role': 'system', 
             'content': 
-                'Rework the following transcript item to a more readable format. \
+                'Rework the following transcript item to a more readable format.\
+                Stay in the original language!  \
                 Do not change the content, just make it more readable. \
                 Shorten this into whole sentences. I want you to build whole sentences with the timestamps, but keep it as short as it makes sense to get a whole and finished sentence. \
                 You are allowed to polish that sentence and add punctuation, etc.'},
@@ -174,9 +175,31 @@ def rework_transcript_to_sentences(transcript_item: dict) -> dict:
         presence_penalty=0,
     )
     result = response.choices[0].message.content
-    print(result)
     return result
     
 
+def create_shorts_script(cleaned_transcript: str):
+    """
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model='gpt-4o-mini',
+        messages=[
+            {'role': 'system', 
+            'content': 
+                'Create a Voiceover for short-form content based on the transcript of the video. \
+                Stay in the original language!. \
+                The transcript is from a chapter called: "film development - the analog kitchen". \
+                Create a new Voiceover based on the video audio, you also may cite words from the video for the new voiceover. \
+                Create a HOOK at the beginning of the video, then create a BUILDUP in the video and insert a CALL TO ACTION at the end of the video.'},
 
-
+            {'role': 'user', 'content': cleaned_transcript}
+        ],
+        temperature=0.1,
+        max_tokens=512,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+    result = response.choices[0].message.content
+    return result

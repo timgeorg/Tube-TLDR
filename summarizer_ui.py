@@ -59,6 +59,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
     summary_by_chapters_result = None
     summary_entire_video_result = None
     summary_one_sentence_result = None
+    shorts_by_chapters_result = None
 
     with col1:
         if st.button("Summarize by Chapters"):
@@ -85,14 +86,25 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
                 )
 
     with col4:
-        if st.button("Option 4"):
-            st.write("Option 4 selected")
+        if st.button("Shorts by Chapters"):
+            with st.spinner('Generating ideas for Shorts by chapters...'):
+                shorts_by_chapters_result = ts.create_shorts_by_chapters(
+                    video=st.session_state.youtube_video, 
+                    api_key=st.secrets["API_KEY"]
+                )
 
     if summary_by_chapters_result:
         st.write("Summary by Chapters:")
         st.write(f"### {st.session_state.youtube_video.title}")
         st.write(f"#### by {st.session_state.youtube_video.channel}")
         for chapter in summary_by_chapters_result:
+            st.write(chapter)
+
+    if shorts_by_chapters_result:
+        st.write("Ideas for Shorts by Chapters:")
+        st.write(f"### {st.session_state.youtube_video.title}")
+        st.write(f"#### by {st.session_state.youtube_video.channel}")
+        for chapter in shorts_by_chapters_result:
             st.write(chapter)
 
     if summary_entire_video_result:
