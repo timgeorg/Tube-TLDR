@@ -151,4 +151,32 @@ def get_unified_summary(api_key: str, sections: List[Dict]) -> str:
     return result
 
 
+def rework_transcript_to_sentences(transcript_item: dict) -> dict:
+    """
+    """
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model='gpt-4o-mini',
+        messages=[
+            {'role': 'system', 
+            'content': 
+                'Rework the following transcript item to a more readable format. \
+                Do not change the content, just make it more readable. \
+                Shorten this into whole sentences. I want you to build whole sentences with the timestamps, but keep it as short as it makes sense to get a whole and finished sentence. \
+                You are allowed to polish that sentence and add punctuation, etc.'},
+
+            {'role': 'user', 'content': str(transcript_item)}
+        ],
+        temperature=0.1,
+        max_tokens=512,
+        top_p=1,
+        frequency_penalty=0,
+        presence_penalty=0,
+    )
+    result = response.choices[0].message.content
+    print(result)
+    return result
+    
+
+
 

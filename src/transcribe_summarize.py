@@ -5,9 +5,14 @@ from datetime import datetime, timedelta
 # External Libraries
 from openai import OpenAI # OR: from openai import AzureOpenAI
 # User-defined Libraries
-import src.gpt_functions as gpt
-from src.youtube_video import YouTubeVideo
-from src.logger import Logger
+try:
+    import src.gpt_functions as gpt
+    from src.youtube_video import YouTubeVideo
+    from src.logger import Logger
+except ImportError:
+    from youtube_video import YouTubeVideo
+    from logger import Logger
+    import gpt_functions as gpt
 
 
 class YouTubeTranscribeSummarize(Logger):
@@ -47,13 +52,14 @@ class YouTubeTranscribeSummarize(Logger):
         return chapters
 
 
-    def link_content_to_outline(self, content: list, outline: list) -> list[dict]:
+    def link_content_to_outline(self, content: list, outline: list, short_form: bool = False) -> list[dict]:
         """
         Group the transcript content into sections based on the video outline
         Args:
             content (list): List of dictionaries containing the transcript content
             outline (list): List of dictionaries containing the video outline (chapters)
                 keys: 'timestr' (str), 'timestamp' (timedelta), content (str)
+            short_form (bool): Flag to indicate if the transcript shall be cleaned for short form content creation. Defaults to False.
         Returns:
             list: List of dictionaries containing the video outline with the content linked to each section
                 keys: 'timestr' (str), 'timestamp (timedelta), 'heading' (str), 'content' (str)
@@ -68,9 +74,18 @@ class YouTubeTranscribeSummarize(Logger):
                 if end_time:
                     if start_time <= entry["timestamp"] < end_time:
                         item["content"].append(entry["text"])
+                        # Transcript for short form content creation
+                        if "transcript" not in item and short_form = True:
+                            item["transcript"] = []
+                        item["transcript"].append({
+                            "text": entry["text"],
+                            "timestamp": entry["timestamp"],
+                            "timestr": entry["start"]
+                        })
                 else:
                     if entry["timestamp"] >= start_time:
                         item["content"].append(entry["text"])
+
         # Join the content into a single string for each section
         for item in outline:
             item["content"] = " ".join(item["content"])
@@ -219,6 +234,7 @@ def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
+    
 
     chap_summaries = []
     for section in sections:
@@ -226,6 +242,17 @@ def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
         chap_summaries.append(chap_summary)
 
     return chap_summaries
+
+
+def create_shorts_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
+
+    obj = YouTubeTranscribeSummarize(youtube_video=video)
+    outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
+    sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline, short_form=True)
+    for section in sections:
+        chapter_script = gpt.rework_transcript_to_sentences(section)
+        shorts_script = gpt.create_shorts_script(chapter_script))
+
 
 
 def summary_entire_video(video: YouTubeVideo, api_key: str) -> str:
@@ -263,7 +290,7 @@ def summary_in_one_sentence(video: YouTubeVideo, api_key: str) -> str:
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")
-    # summary_by_chapters(url=url)
+    summary_by_chapters(url=url)
     # summary_entire_video(url=url)
 
 
