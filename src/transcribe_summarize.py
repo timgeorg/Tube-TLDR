@@ -77,11 +77,11 @@ class YouTubeTranscribeSummarize(Logger):
                         # Transcript for short form content creation
                         if "transcript" not in item and short_form == True:
                             item["transcript"] = []
-                        item["transcript"].append({
-                            "text": entry["text"],
-                            "timestamp": entry["timestamp"],
-                            "timestr": entry["start"]
-                        })
+                            item["transcript"].append({
+                                "text": entry["text"],
+                                "timestamp": entry["timestamp"],
+                                "timestr": entry["start"]
+                            })
                 else:
                     if entry["timestamp"] >= start_time:
                         item["content"].append(entry["text"])
@@ -253,7 +253,12 @@ def create_shorts_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     for section in sections:
         chapter_script = gpt.rework_transcript_to_sentences(section)
         shorts_script = gpt.create_shorts_script(chapter_script)
-        shorts_per_chapter.append(shorts_script + section["heading"])
+        shorts_per_chapter.append(
+            {
+                "heading": section["heading"],
+                "script": shorts_script,
+            }
+        )
     return shorts_per_chapter
 
 

@@ -183,15 +183,17 @@ def create_shorts_script(cleaned_transcript: str):
     """
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.chat.completions.create(
-        model='gpt-4o-mini',
+        model='gpt-4o',
         messages=[
             {'role': 'system', 
             'content': 
-                'Create a Voiceover for short-form content based on the transcript of the video. \
-                Stay in the original language!. \
-                The transcript is from a chapter called: "film development - the analog kitchen". \
-                Create a new Voiceover based on the video audio, you also may cite words from the video for the new voiceover. \
-                Create a HOOK at the beginning of the video, then create a BUILDUP in the video and insert a CALL TO ACTION at the end of the video.'},
+                'Create a Voiceover for short-form content based on the provided trancript. \
+                Stay in the original language and keep it short, engaging and conversational! \
+                Create a HOOK at the beginning of the video like "Hast du dich schon mal gefragt, ...?" \
+                and a CALL TO ACTION at the end of the video, e.g to check out the full video on the channel. \
+                Make it as short as possible! No AI slop or unnecessary words. Absolutely laidback and on point. \
+                Create a smooth text without timestamps or block elements to that it can immediately be sythezized to Voice. \
+                '},
 
             {'role': 'user', 'content': cleaned_transcript}
         ],
