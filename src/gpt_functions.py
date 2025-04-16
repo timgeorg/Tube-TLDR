@@ -24,12 +24,13 @@ def get_chapter_summary(section: Dict, model: str = 'gpt-4o-mini', api_key=os.ge
                 'Summarize the following section of the video. \
                     Use the provided content to generate a summary of the section. \
                     Stay in the original language. \
-                    Create Bullet Points, but dont shorten the idea of the content. Explain the topic briefly and not that they talk about it in the video. \
+                    Explain the content short and conversational as a bullet point. \
+                    Do not write things like "They mention the importance" or "the speaker says". \
                     If they talk about the 5 things or the 9 types or something like that, list them. \
                     Answer the question thats given in the topic or chapter title if available. \
                     Put the topic with timestamp (in h, min, sec) [if available] in the format "hh:mm:ss" or "mm:ss" as a heading in the format: "Heading Topic (00:34)"\
                     Every Heading should be a markdown ## heading. If there is no heading title (eg. just Chapter 1), create a heading out of the content provided. \
-                    Try to keep it as short as possible, but as long as necessary. '},
+                    Try to keep it as short as possible, but as long as necessary.'},
 
             {'role': 'user', 'content': str(section)}
         ],
