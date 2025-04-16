@@ -202,7 +202,7 @@ class YouTubeVideo(Logger):
         timestamp_regex = re.compile(r"\b\d{1,2}:\d{2}(?::\d{2})?\b")
         """
         Explanation:
-        1. \b: This is a word boundary anchor. It asserts a position at the start or end of a word. 
+        1. b: This is a word boundary anchor. It asserts a position at the start or end of a word. 
             This ensures that the timestamp is not part of a larger word.
         2. \d{1,2}: This matches one or two digits. It represents the hours part of the timestamp, allowing for values from 0 to 99.
         3. :: This matches the colon character : which separates hours from minutes.
@@ -210,7 +210,7 @@ class YouTubeVideo(Logger):
         5. (?::\d{2})?: This is a non-capturing group (?: ... ) that matches the colon : followed by exactly two digits \d{2}. 
             The ? at the end makes this group optional, meaning it can match zero or one time. 
             This part represents the optional seconds part of the timestamp, allowing for values from 00 to 59.
-        6. \b: Another word boundary anchor to ensure the timestamp is not part of a larger word.
+        6. b: Another word boundary anchor to ensure the timestamp is not part of a larger word.
         """
         timestamps = timestamp_regex.findall(self.description)
         chapter_titles = re.split(timestamp_regex, self.description)[1:]
