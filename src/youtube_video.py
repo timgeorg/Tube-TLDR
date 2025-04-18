@@ -120,30 +120,28 @@ class YouTubeVideo(Logger):
         Returns:
             str: The description of the YouTube video.
         """
-        # TODO: some cleanup and support for videos with no description
-
         try:
-            description_regex = re.compile('(?<=shortDescription":").*(?=","isCrawlable)')
-            description = description_regex.findall(str(self.soup))[0].replace('\\n', '\n')
-            return description
+            # Attempt to extract the description using regex
+            description_regex = re.compile(r'(?<=shortDescription":").*?(?=","isCrawlable)')
+            description = description_regex.search(str(self.soup))
+            if description:
+                return description.group(0).replace('\\n', '\n')
         except Exception as e:
-            self.logger.error(f"Could not find the video description on the page: {e}")
+            self.logger.error(f"Error extracting description using regex: {e}")
 
-        # Parse the HTML content using BeautifulSoup
-        # Try to find the video description in a <meta> tag
+        # Attempt to extract the description from a <meta> tag
         description_meta = self.soup.find('meta', attrs={'name': 'description'})
-        # only short description
         if description_meta:
-            return description_meta['content']  # Return the description text
+            return description_meta.get('content', '').strip()
 
-        # Alternative approach if <meta> tag not found
+        # Attempt to extract the description from a <p> tag
         description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
         if description_tag:
-            return description_tag.text.strip()
+            return description_tag.get_text(strip=True)
 
-        # Raise an exception if description is not found
-        print("Could not find the video description on the page.")
-        raise Exception("Description not found in meta tag or paragraph tag.")
+        # Log and raise an exception if description is not found
+        self.logger.error("Description not found in the page.")
+        raise Exception("Description not found.")
 
 
     def _check_for_timestamps(self) -> bool:
