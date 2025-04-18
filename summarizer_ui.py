@@ -16,6 +16,9 @@ if st.button("Clear"):
         del st.session_state[key]
     st.rerun()
 
+# Dropdown to select the language of the video
+language = st.selectbox("Select the language of the video:", ["English", "Deutsch"], key="video_language")
+
 if st.button("Load Video"):
     if youtube_url:
         # Regular expression to check if the URL is a valid YouTube link
@@ -60,6 +63,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
     summary_entire_video_result = None
     summary_one_sentence_result = None
     shorts_by_chapters_result = None
+
 
     with col1:
         if st.button("Summarize by Chapters"):

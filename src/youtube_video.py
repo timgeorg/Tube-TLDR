@@ -133,12 +133,12 @@ class YouTubeVideo(Logger):
         description_meta = self.soup.find('meta', attrs={'name': 'description'})
         if description_meta:
             return description_meta.get('content', '').strip()
-
+        
         # Attempt to extract the description from a <p> tag
-        description_tag = self.soup.find('p', class_='content')  # Adjust class if needed
+        description_tag = self.soup.find('p', class_='content')
         if description_tag:
             return description_tag.get_text(strip=True)
-
+        
         # Log and raise an exception if description is not found
         self.logger.error("Description not found in the page.")
         raise Exception("Description not found.")
