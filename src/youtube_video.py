@@ -218,7 +218,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _get_transcript(self):
+    def _get_transcript(self, languages=("en", "de")) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
         Args:
@@ -233,7 +233,10 @@ class YouTubeVideo(Logger):
         video_id = self.url.split('=')[-1]
 
         try:
-            data = YouTubeTranscriptApi.get_transcript(video_id, languages=("en", "de"))
+            data = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
+            if not data:
+                self.logger.error(f"No transcript available for this video.")
+                return None
             timestamped_data = self._convert_transcript_to_timedelta(data)
             self.logger.info(f"Successfully retrieved transcript")
             return timestamped_data
