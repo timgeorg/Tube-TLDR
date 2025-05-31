@@ -59,11 +59,16 @@ def get_whole_transcript_summary(transcript: str, api_key=os.getenv("OPENAI_API_
     response = client.chat.completions.create(
         model='gpt-4o-mini',
         messages=[
-            {'role': 'system', 
-            'content': 
-                'Summarize the following transcript of a podcast. \
-                    Do not only list the topics they talk about, but briefly explain every idea you mention in the summary. \
-                    Still try to keep it as short as possible. Use bullet points if possible.'},
+            {'role': 'system',
+            'content':
+                'Summarize the following transcript of a video. \
+                Use the provided content to generate a summary of the entire video. \
+                Stay in the original language. \
+                Explain the content in a short, conversational way as bullet points. \
+                Do not write things like "They mention the importance" or "the speaker says". \
+                If the video discusses lists (e.g., 5 things, 9 types), enumerate them. \
+                If there are questions in the title or main topic, answer them. \
+                Try to keep the summary as short as possible, but as long as necessary to cover the main points.'},
 
             {'role': 'user', 'content': transcript}
         ],
