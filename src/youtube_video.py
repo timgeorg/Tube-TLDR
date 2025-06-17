@@ -14,6 +14,12 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from src.logger import Logger
 
 
+PROXIES = {
+    'http': "socks5://127.0.0.1:9050",
+    'https': "socks5://127.0.0.1:9050",
+}
+
+
 class YouTubeVideo(Logger):
     def __init__(self, url):
         self.url = url
@@ -218,7 +224,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _get_transcript(self, languages=("en", "de")) -> list[dict]:
+    def _get_transcript(self, languages=["en", "de"]) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
         Args:
@@ -233,11 +239,15 @@ class YouTubeVideo(Logger):
         video_id = self.url.split('=')[-1]
 
         try:
-            data = YouTubeTranscriptApi.get_transcript(video_id, languages=languages)
-            if not data:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript = transcript_list.find_generated_transcript(['de', 'en'])
+            fetched_transcript = transcript.fetch()
+            transcript = fetched_transcript.to_raw_data()
+
+            if not transcript:
                 self.logger.error(f"No transcript available for this video.")
                 return None
-            timestamped_data = self._convert_transcript_to_timedelta(data)
+            timestamped_data = self._convert_transcript_to_timedelta(transcript)
             self.logger.info(f"Successfully retrieved transcript")
             return timestamped_data
         

@@ -6,6 +6,8 @@ import unittest
 # User-defined Imports
 from src.youtube_video import YouTubeVideo
 from src.logger import Logger
+import unittest
+from unittest.mock import patch, MagicMock
 
 
 # Mock the YouTubeVideo class
@@ -192,6 +194,60 @@ class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
         mock.description = description_example
         function_output = mock._extract_chapters()
         self.assertEqual(function_output, expected_output)
+
+
+class Test_YouTubeVideo_get_transcript(unittest.TestCase):
+    def setUp(self):
+        self.video = YouTubeVideo("https://youtube.com/watch?v=dQw4w9WgXcQ")
+        self.video.logger = MagicMock()
+        self.video.soup = MagicMock()
+        self.video.description = "desc"
+        self.video.chapters_available = False
+
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_success(self, mock_api):
+        # Mock transcript data
+        transcript_data = [
+            {'start': 0.0, 'duration': 5.0, 'text': 'Hello'},
+            {'start': 5.0, 'duration': 4.0, 'text': 'World'}
+        ]
+        mock_transcript = MagicMock()
+        mock_transcript.fetch.return_value = transcript_data
+        mock_transcript_list = MagicMock()
+        mock_transcript_list.find_transcript.return_value = mock_transcript
+        mock_api.list_transcripts.return_value = mock_transcript_list
+
+        result = self.video._get_transcript(languages=("en",))
+        self.assertIsInstance(result, list)
+        self.assertEqual(result[0]['text'], 'Hello')
+        self.assertIn('timestamp', result[0])
+        self.assertEqual(result[1]['text'], 'World')
+        self.assertIn('timestamp', result[1])
+
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_no_data(self, mock_api):
+        mock_transcript = MagicMock()
+        mock_transcript.fetch.return_value = []
+        mock_transcript_list = MagicMock()
+        mock_transcript_list.find_transcript.return_value = mock_transcript
+        mock_api.list_transcripts.return_value = mock_transcript_list
+
+        result = self.video._get_transcript(languages=("en",))
+        self.assertIsNone(result)
+
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_exception(self, mock_api):
+        mock_api.list_transcripts.side_effect = Exception("API error")
+        result = self.video._get_transcript(languages=("en",))
+        self.assertIsNone(result)
+        
+    def test_get_transcript_debug_output(self):
+        # Use a real YouTubeVideo object, but override _get_transcript to return a known value for debugging
+        video = YouTubeVideo("https://youtube.com/watch?v=dQw4w9WgXcQ")
+        result = video._get_transcript(languages=("en",))
+        print("DEBUG transcript result:", result)
+        self.assertIsInstance(result, list)
+        self.assertEqual(result[0]['text'], '[Music]')
 
 
 if __name__ == '__main__':
