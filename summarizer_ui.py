@@ -112,9 +112,13 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
             st.write(chapter)
 
     if summary_entire_video_result:
+        st.write(f"### {st.session_state.youtube_video.title}")
+        st.write(f"#### by {st.session_state.youtube_video.channel}")
         st.write("Summary of Entire Video:")
         st.write(summary_entire_video_result)
 
     if summary_one_sentence_result:
+        st.write(f"### {st.session_state.youtube_video.title}")
+        st.write(f"#### by {st.session_state.youtube_video.channel}")
         st.write("One Sentence Summary:")
         st.write(summary_one_sentence_result)
