@@ -21,8 +21,9 @@ PROXIES = {
 
 
 class YouTubeVideo(Logger):
-    def __init__(self, url):
+    def __init__(self, url, proxy=None):
         self.url = url
+        self.proxy = proxy
         self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     
@@ -33,7 +34,7 @@ class YouTubeVideo(Logger):
         self.duration = self._get_duration()
         self.description = self._get_description()
         self.chapters_available: bool = self._check_for_timestamps()
-        self.transcript = self._get_transcript()
+        self.transcript = self._get_transcript(proxy=self.proxy)
         self.chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
 
@@ -224,7 +225,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _get_transcript(self, languages=["en", "de"]) -> list[dict]:
+    def _get_transcript(self, languages=["en", "de"], proxy=None) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
         Args:
@@ -239,7 +240,7 @@ class YouTubeVideo(Logger):
         video_id = self.url.split('=')[-1]
 
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=PROXIES if proxy else None)
             transcript = transcript_list.find_generated_transcript(['de', 'en'])
             fetched_transcript = transcript.fetch()
             transcript = fetched_transcript.to_raw_data()
@@ -255,3 +256,9 @@ class YouTubeVideo(Logger):
             self.logger.error(f"An error occurred while retrieving the transcript: {e}")
             return None
 
+"""
+Negative examples for prompt:
+Discusses common body language mistakes people make during communication.
+Highlights how these mistakes can lead to misunderstandings or negative impressions.
+Emphasizes the importance of being aware of non-verbal cues in interactions.
+"""
