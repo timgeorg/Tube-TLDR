@@ -24,6 +24,21 @@ Tube TLDR takes a YouTube video and produces a concise, readable summary powered
 Python, OpenAI & Streamlit <br>
 Docker (coming soon)
 
+## Running It
+
+The default way to run Tube TLDR is via Streamlit:
+
+```bash
+streamlit run summarizer_ui.py
+```
+
+There are also a few extra helpers if you want to explore alternative ways to run or package it:
+
+- **Dockerfile** for containerized runs
+- **PyInstaller** setup via `launcher.spec`
+- **Headless mode** via `headless.py`
+- **Setup/Run scripts** (`setup.bat`, `run.bat`, `run.sh`) to bootstrap and run directly
+
 ### Shoutout
 
 If you find this useful, consider starring ⭐ the repo or sharing it with someone who drowns in YouTube videos daily.
