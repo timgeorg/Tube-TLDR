@@ -2,24 +2,26 @@
 import os
 import re
 import streamlit as st
+from dotenv import load_dotenv, find_dotenv
 # User Defined Libraries
 import src.transcribe_summarize as ts
+from src.config_loader import load_config, get_proxy_settings
 
-def env_bool(name, default=False):
-    val = os.getenv(name)
-    if val is None:
-        return default
-    return val.lower() in ("1", "true", "yes", "on")
+# Loads .env from the project root (searches upward from this file / CWD)
+load_dotenv(find_dotenv(), override=False)
 
-PROXY = env_bool("PROXY")
-API_KEY = os.getenv("API_KEY") 
+API_KEY = os.getenv("API_KEY")
 
 if not API_KEY:
     st.error("API Key for LLM not found. Please set the API_KEY environment variable or Streamlit secrets.")
     st.stop()
 
-if not PROXY:
-    PROXY = False
+cfg = load_config()
+proxy_settings = get_proxy_settings(cfg)
+
+if proxy_settings.enabled and proxy_settings.proxies is None:
+    st.error("Proxy is enabled in config.yml, but no proxy URLs are configured.")
+    st.stop()
 
 st.title("YouTube Video Summarizer")
 
@@ -47,7 +49,7 @@ if st.button("Load Video"):
             st.write("Please enter a valid YouTube URL.")
         else:
             with st.spinner('Getting video ...'):
-                video = ts.YouTubeVideo(url=youtube_url, proxy=PROXY)
+                video = ts.YouTubeVideo(url=youtube_url, proxy=proxy_settings.proxies)
                 video.get_data()
                 st.session_state.youtube_video = video
                 has_description = bool(st.session_state.youtube_video.description)

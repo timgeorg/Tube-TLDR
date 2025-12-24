@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY summarizer_ui.py /app/summarizer_ui.py
 COPY ./src /app/src
 COPY .streamlit /app/.streamlit
-COPY config.yaml /app/config.yaml
+COPY config.yml /app/config.yml
 
 EXPOSE 8501
 

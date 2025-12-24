@@ -14,16 +14,11 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from src.logger import Logger
 
 
-PROXIES = {
-    "http":  "socks5h://torproxy:9050",
-    "https": "socks5h://torproxy:9050",
-}
-
-
 class YouTubeVideo(Logger):
-    def __init__(self, url, proxy=False):
+    def __init__(self, url, proxy=None):
         self.url = url
-        self.proxy :bool = proxy
+        # proxy is either a requests/youtube-transcript-api proxies dict or None
+        self._proxies = proxy
         self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     
@@ -34,7 +29,7 @@ class YouTubeVideo(Logger):
         self.duration = self._get_duration()
         self.description = self._get_description()
         self.chapters_available: bool = self._check_for_timestamps()
-        self.transcript = self._get_transcript(proxy=self.proxy)
+        self.transcript = self._get_transcript()
         self.chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
 
@@ -52,7 +47,7 @@ class YouTubeVideo(Logger):
             requests.exceptions.HTTPError: If the HTTP request returned an unsuccessful status code.
         """
         self.logger.info(f"Getting metadata from {self.url}")
-        response = requests.get(self.url)
+        response = requests.get(self.url, proxies=self._proxies, timeout=30)
         response.raise_for_status()
         html = response.content
         soup = BeautifulSoup(html, features="html.parser")
@@ -225,7 +220,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _get_transcript(self, languages=["en", "de"], proxy=None) -> list[dict]:
+    def _get_transcript(self, languages=["en", "de"]) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
         Args:
@@ -240,7 +235,7 @@ class YouTubeVideo(Logger):
         video_id = self.url.split('=')[-1]
 
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=PROXIES if proxy else None)
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=self._proxies)
             transcript = transcript_list.find_generated_transcript(['de', 'en'])
             fetched_transcript = transcript.fetch()
             transcript = fetched_transcript.to_raw_data()
