@@ -3,6 +3,8 @@
 Welcome to Tube TLDR, a solo passion project with a bold mission: <br>
 **Build the best YouTube summarizer on the internet.**
 
+I tried the available tools online to summarize YouTube videos and didn’t like the experience — so I built my own. With Tube TLDR, I can choose the summary style I want, extend the workflow however I want, and keep improving it over time. And hypothetically, because you can run it with your own API keys, you can get a lot of usage for cheap.
+
 No more scrubbing through hour-long videos — get the key takeaways fast.
 
 ## What Is Tube TLDR?
