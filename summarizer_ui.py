@@ -12,15 +12,13 @@ def env_bool(name, default=False):
     return val.lower() in ("1", "true", "yes", "on")
 
 PROXY = env_bool("PROXY")
-
-API_KEY = os.getenv("API_KEY") or st.secrets.get("API_KEY")
+API_KEY = os.getenv("API_KEY") 
 
 if not API_KEY:
     st.error("API Key for LLM not found. Please set the API_KEY environment variable or Streamlit secrets.")
     st.stop()
 
 if not PROXY:
-    st.warning("Proxy via Tor for transcript fetching not found. Proceeding without proxy may lead to failures in fetching transcripts for some videos.")
     PROXY = False
 
 st.title("YouTube Video Summarizer")
