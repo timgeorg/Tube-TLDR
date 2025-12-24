@@ -15,15 +15,15 @@ from src.logger import Logger
 
 
 PROXIES = {
-    'http': "socks5://127.0.0.1:9050",
-    'https': "socks5://127.0.0.1:9050",
+    "http":  "socks5h://torproxy:9050",
+    "https": "socks5h://torproxy:9050",
 }
 
 
 class YouTubeVideo(Logger):
-    def __init__(self, url, proxy=None):
+    def __init__(self, url, proxy=False):
         self.url = url
-        self.proxy = proxy
+        self.proxy :bool = proxy
         self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     

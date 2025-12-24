@@ -1,8 +1,27 @@
 # Import necessary libraries
+import os
 import re
 import streamlit as st
 # User Defined Libraries
 import src.transcribe_summarize as ts
+
+def env_bool(name, default=False):
+    val = os.getenv(name)
+    if val is None:
+        return default
+    return val.lower() in ("1", "true", "yes", "on")
+
+PROXY = env_bool("PROXY")
+
+API_KEY = os.getenv("API_KEY") or st.secrets.get("API_KEY")
+
+if not API_KEY:
+    st.error("API Key for LLM not found. Please set the API_KEY environment variable or Streamlit secrets.")
+    st.stop()
+
+if not PROXY:
+    st.warning("Proxy via Tor for transcript fetching not found. Proceeding without proxy may lead to failures in fetching transcripts for some videos.")
+    PROXY = False
 
 st.title("YouTube Video Summarizer")
 
@@ -30,7 +49,7 @@ if st.button("Load Video"):
             st.write("Please enter a valid YouTube URL.")
         else:
             with st.spinner('Getting video ...'):
-                video = ts.YouTubeVideo(url=youtube_url)
+                video = ts.YouTubeVideo(url=youtube_url, proxy=PROXY)
                 video.get_data()
                 st.session_state.youtube_video = video
                 has_description = bool(st.session_state.youtube_video.description)
@@ -70,7 +89,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
             with st.spinner('Summarizing video by chapters...'):
                 summary_by_chapters_result = ts.summary_by_chapters(
                     video=st.session_state.youtube_video, 
-                    api_key=st.secrets["API_KEY"]
+                    api_key=API_KEY
                 )
 
     with col2:
@@ -78,7 +97,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
             with st.spinner('Summarizing entire video...'):
                 summary_entire_video_result = ts.summary_entire_video(
                     video=st.session_state.youtube_video, 
-                    api_key=st.secrets["API_KEY"]
+                    api_key=API_KEY
                 )
 
     with col3:
@@ -86,7 +105,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
             with st.spinner('Summarizing video in one sentence...'):
                 summary_one_sentence_result = ts.summary_in_one_sentence(
                     video=st.session_state.youtube_video, 
-                    api_key=st.secrets["API_KEY"], 
+                    api_key=API_KEY, 
                 )
 
     with col4:
@@ -94,7 +113,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
             with st.spinner('Generating ideas for Shorts by chapters...'):
                 shorts_by_chapters_result = ts.create_shorts_by_chapters(
                     video=st.session_state.youtube_video, 
-                    api_key=st.secrets["API_KEY"]
+                    api_key=API_KEY
                 )
 
     if summary_by_chapters_result:
