@@ -13,6 +13,7 @@ except ImportError:
     from youtube_video import YouTubeVideo
     from logger import Logger
     import gpt_functions as gpt
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class YouTubeTranscribeSummarize(Logger):
@@ -235,11 +236,18 @@ def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
     
+    # Parallelize chapter summaries (network-bound -> threads work well here)
+    max_workers = min(8, len(sections)) or 1  # tune as needed (and to avoid rate-limits)
+    chap_summaries = [None] * len(sections)
 
-    chap_summaries = []
-    for section in sections:
-        chap_summary = gpt.get_chapter_summary(section, api_key=api_key)
-        chap_summaries.append(chap_summary)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_idx = {
+            executor.submit(gpt.get_chapter_summary, sections[i], api_key=api_key): i
+            for i in range(len(sections))
+        }
+        for future in as_completed(future_to_idx):
+            idx = future_to_idx[future]
+            chap_summaries[idx] = future.result()
 
     return chap_summaries
 

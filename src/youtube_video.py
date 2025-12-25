@@ -14,15 +14,11 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from src.logger import Logger
 
 
-PROXIES = {
-    'http': "socks5://127.0.0.1:9050",
-    'https': "socks5://127.0.0.1:9050",
-}
-
-
 class YouTubeVideo(Logger):
-    def __init__(self, url):
+    def __init__(self, url, proxy=None):
         self.url = url
+        # proxy is either a requests/youtube-transcript-api proxies dict or None
+        self._proxies = proxy
         self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     
@@ -51,7 +47,7 @@ class YouTubeVideo(Logger):
             requests.exceptions.HTTPError: If the HTTP request returned an unsuccessful status code.
         """
         self.logger.info(f"Getting metadata from {self.url}")
-        response = requests.get(self.url)
+        response = requests.get(self.url, proxies=self._proxies, timeout=30)
         response.raise_for_status()
         html = response.content
         soup = BeautifulSoup(html, features="html.parser")
@@ -224,7 +220,7 @@ class YouTubeVideo(Logger):
         return chapters
     
 
-    def _get_transcript(self, languages=["en", "de"]) -> list[dict]:
+    def _get_transcript(self, languages=None) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
         Args:
@@ -238,11 +234,48 @@ class YouTubeVideo(Logger):
         self.logger.info(f"Getting transcript ...")
         video_id = self.url.split('=')[-1]
 
+        preferred_languages = ["de", "en"] if languages is None else list(languages)
+
+        def _safe_find_transcript(transcript_list, finder_name: str, langs: list[str]):
+            finder = getattr(transcript_list, finder_name, None)
+            if finder is None:
+                return None
+            try:
+                return finder(langs)
+            except Exception:
+                return None
+
+        def _select_any_transcript(transcript_list):
+            try:
+                transcripts = list(transcript_list)
+            except Exception:
+                return None
+
+            generated = [t for t in transcripts if getattr(t, "is_generated", False)]
+            if generated:
+                return generated[0]
+
+            manual = [t for t in transcripts if not getattr(t, "is_generated", False)]
+            if manual:
+                return manual[0]
+
+            return None
+
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-            transcript = transcript_list.find_generated_transcript(['de', 'en'])
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=self._proxies)
+
+            transcript = _safe_find_transcript(transcript_list, "find_generated_transcript", preferred_languages)
+            if transcript is None:
+                transcript = _safe_find_transcript(transcript_list, "find_manually_created_transcript", preferred_languages)
+            if transcript is None:
+                transcript = _select_any_transcript(transcript_list)
+
+            if transcript is None:
+                self.logger.error(f"No transcript available for this video.")
+                return None
+
             fetched_transcript = transcript.fetch()
-            transcript = fetched_transcript.to_raw_data()
+            transcript = fetched_transcript.to_raw_data() if hasattr(fetched_transcript, "to_raw_data") else fetched_transcript
 
             if not transcript:
                 self.logger.error(f"No transcript available for this video.")
@@ -255,3 +288,9 @@ class YouTubeVideo(Logger):
             self.logger.error(f"An error occurred while retrieving the transcript: {e}")
             return None
 
+"""
+Negative examples for prompt:
+Discusses common body language mistakes people make during communication.
+Highlights how these mistakes can lead to misunderstandings or negative impressions.
+Emphasizes the importance of being aware of non-verbal cues in interactions.
+"""

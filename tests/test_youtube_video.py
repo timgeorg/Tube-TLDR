@@ -14,6 +14,7 @@ from unittest.mock import patch, MagicMock
 class MockYouTubeVideo(Logger):
     def __init__(self):
         self.logger = self.create_logger(name=self.__class__.__name__) # Mock the logger
+        self.chapters_available = True
     
     def _extract_chapters(description):
         return YouTubeVideo._extract_chapters(description)
@@ -21,11 +22,9 @@ class MockYouTubeVideo(Logger):
 
 class Test_YouTubeVideo_extract_chapters(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.mock = MockYouTubeVideo()
-        cls.mock.chapters_available = True
-        super().setUpClass()
+    def setUp(self):
+        self.mock = MockYouTubeVideo()
+        super().setUp()
 
     def test_extract_chapters(self):
         description_example = """
@@ -211,10 +210,12 @@ class Test_YouTubeVideo_get_transcript(unittest.TestCase):
             {'start': 0.0, 'duration': 5.0, 'text': 'Hello'},
             {'start': 5.0, 'duration': 4.0, 'text': 'World'}
         ]
+        mock_fetched = MagicMock()
+        mock_fetched.to_raw_data.return_value = transcript_data
         mock_transcript = MagicMock()
-        mock_transcript.fetch.return_value = transcript_data
+        mock_transcript.fetch.return_value = mock_fetched
         mock_transcript_list = MagicMock()
-        mock_transcript_list.find_transcript.return_value = mock_transcript
+        mock_transcript_list.find_generated_transcript.return_value = mock_transcript
         mock_api.list_transcripts.return_value = mock_transcript_list
 
         result = self.video._get_transcript(languages=("en",))
@@ -227,9 +228,11 @@ class Test_YouTubeVideo_get_transcript(unittest.TestCase):
     @patch("src.youtube_video.YouTubeTranscriptApi")
     def test_get_transcript_no_data(self, mock_api):
         mock_transcript = MagicMock()
-        mock_transcript.fetch.return_value = []
+        mock_fetched = MagicMock()
+        mock_fetched.to_raw_data.return_value = []
+        mock_transcript.fetch.return_value = mock_fetched
         mock_transcript_list = MagicMock()
-        mock_transcript_list.find_transcript.return_value = mock_transcript
+        mock_transcript_list.find_generated_transcript.return_value = mock_transcript
         mock_api.list_transcripts.return_value = mock_transcript_list
 
         result = self.video._get_transcript(languages=("en",))
@@ -240,9 +243,64 @@ class Test_YouTubeVideo_get_transcript(unittest.TestCase):
         mock_api.list_transcripts.side_effect = Exception("API error")
         result = self.video._get_transcript(languages=("en",))
         self.assertIsNone(result)
+
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_falls_back_to_manual(self, mock_api):
+        transcript_data = [
+            {'start': 0.0, 'duration': 5.0, 'text': 'Manual'},
+        ]
+        mock_fetched = MagicMock()
+        mock_fetched.to_raw_data.return_value = transcript_data
+        mock_manual_transcript = MagicMock()
+        mock_manual_transcript.fetch.return_value = mock_fetched
+
+        mock_transcript_list = MagicMock()
+        mock_transcript_list.find_generated_transcript.side_effect = Exception("No generated transcript")
+        mock_transcript_list.find_manually_created_transcript.return_value = mock_manual_transcript
+        mock_api.list_transcripts.return_value = mock_transcript_list
+
+        result = self.video._get_transcript(languages=("en",))
+        self.assertIsInstance(result, list)
+        self.assertEqual(result[0]['text'], 'Manual')
+        self.assertIn('timestamp', result[0])
+
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_any_fallback_prefers_generated(self, mock_api):
+        mock_transcript_list = MagicMock()
+        mock_transcript_list.find_generated_transcript.side_effect = Exception("No preferred generated")
+        mock_transcript_list.find_manually_created_transcript.side_effect = Exception("No preferred manual")
+
+        mock_generated_fetched = MagicMock()
+        mock_generated_fetched.to_raw_data.return_value = [{'start': 0.0, 'duration': 1.0, 'text': 'Generated'}]
+        mock_generated = MagicMock()
+        mock_generated.is_generated = True
+        mock_generated.fetch.return_value = mock_generated_fetched
+
+        mock_manual_fetched = MagicMock()
+        mock_manual_fetched.to_raw_data.return_value = [{'start': 0.0, 'duration': 1.0, 'text': 'Manual'}]
+        mock_manual = MagicMock()
+        mock_manual.is_generated = False
+        mock_manual.fetch.return_value = mock_manual_fetched
+
+        mock_transcript_list.__iter__.return_value = iter([mock_generated, mock_manual])
+        mock_api.list_transcripts.return_value = mock_transcript_list
+
+        result = self.video._get_transcript(languages=("en",))
+        self.assertIsInstance(result, list)
+        self.assertEqual(result[0]['text'], 'Generated')
+        self.assertIn('timestamp', result[0])
         
-    def test_get_transcript_debug_output(self):
-        # Use a real YouTubeVideo object, but override _get_transcript to return a known value for debugging
+    @patch("src.youtube_video.YouTubeTranscriptApi")
+    def test_get_transcript_debug_output(self, mock_api):
+        transcript_data = [{'start': 0.0, 'duration': 1.0, 'text': '[Music]'}]
+        mock_fetched = MagicMock()
+        mock_fetched.to_raw_data.return_value = transcript_data
+        mock_transcript = MagicMock()
+        mock_transcript.fetch.return_value = mock_fetched
+        mock_transcript_list = MagicMock()
+        mock_transcript_list.find_generated_transcript.return_value = mock_transcript
+        mock_api.list_transcripts.return_value = mock_transcript_list
+
         video = YouTubeVideo("https://youtube.com/watch?v=dQw4w9WgXcQ")
         result = video._get_transcript(languages=("en",))
         print("DEBUG transcript result:", result)
