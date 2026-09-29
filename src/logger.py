@@ -15,8 +15,9 @@ class Logger:
         log.setLevel(log_level)
 
         if not log.handlers:
-            # Stream handler for console output
-            stream_handler: logging.StreamHandler = logging.StreamHandler(sys.stdout)
+            # Stream handler for console output (stderr, never stdout — stdout is
+            # reserved for data/protocol output, e.g. MCP stdio transport)
+            stream_handler: logging.StreamHandler = logging.StreamHandler(sys.stderr)
             stream_formatter: logging.Formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
             stream_handler.setFormatter(stream_formatter)
             log.addHandler(stream_handler)
