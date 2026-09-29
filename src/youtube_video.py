@@ -6,10 +6,12 @@ Classes:
 # Native Libraries
 import re
 from datetime import timedelta
+from urllib.parse import urlparse, parse_qs
 # External Libraries
 import requests
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import GenericProxyConfig
 # User-defined Imports
 from src.logger import Logger
 
@@ -22,14 +24,15 @@ class YouTubeVideo(Logger):
         self.logger = self.create_logger(name=self.__class__.__name__) 
         self.logger.info(f"Creating YouTubeVideo object for URL: {url}")
     
-    def get_data(self):
+    def get_data(self, languages=None):
         self.soup = self._get_metadata()
         self.title = self._get_title()
         self.channel = self._get_channel()
         self.duration = self._get_duration()
+        self.upload_date = self._get_upload_date()
         self.description = self._get_description()
         self.chapters_available: bool = self._check_for_timestamps()
-        self.transcript = self._get_transcript()
+        self.transcript = self._get_transcript(languages=languages)
         self.chapters = self._extract_chapters()
         self.logger.info(f"Data successfully retrieved for Video")
 
@@ -112,7 +115,31 @@ class YouTubeVideo(Logger):
             duration = "Duration not found"
         
         return duration
-    
+
+
+    def _get_upload_date(self):
+        """
+        Extracts the upload/publication date of a YouTube video.
+        Tries multiple meta tags to find the date.
+        Returns:
+            str: The upload date if found, otherwise "Upload date not found".
+        """
+        self.logger.info(f"Getting upload date ...")
+        # Try itemprop="datePublished" first (YouTube standard)
+        date_tag = self.soup.find("meta", itemprop="datePublished")
+        if date_tag and date_tag.get("content"):
+            upload_date = date_tag["content"]
+            self.logger.info(f"Upload date: {upload_date}")
+            return upload_date
+        # Fallback: og:video:release_date or other common patterns
+        date_tag = self.soup.find("meta", property="og:video:release_date")
+        if date_tag and date_tag.get("content"):
+            upload_date = date_tag["content"]
+            self.logger.info(f"Upload date: {upload_date}")
+            return upload_date
+        self.logger.warning("Upload date not found")
+        return "Upload date not found"
+
 
     def _get_description(self):
         """
@@ -220,6 +247,29 @@ class YouTubeVideo(Logger):
         return chapters
     
 
+    def _extract_video_id(self, url: str) -> str:
+        """Extract the 11-character YouTube video ID from a URL.
+
+        Handles watch URLs, youtu.be short links, embed URLs, and trailing
+        junk like '&' or extra query params that previously broke parsing.
+        """
+        parsed = urlparse(url)
+        # youtu.be/<id>
+        if parsed.hostname in ("youtu.be", "www.youtu.be") and parsed.path:
+            candidate = parsed.path.strip("/").split("/")[0]
+        else:
+            # watch?v=<id> or /embed/<id>
+            query = parse_qs(parsed.query)
+            candidate = (query.get("v") or [""])[0]
+            if not candidate and parsed.path:
+                # /embed/<id> or /shorts/<id>
+                parts = parsed.path.strip("/").split("/")
+                if len(parts) >= 2 and parts[0] in ("embed", "shorts", "v"):
+                    candidate = parts[1]
+        # Trim to the canonical 11-char id and strip any trailing junk.
+        candidate = candidate.strip("&?=/")
+        return candidate[:11] if candidate else ""
+
     def _get_transcript(self, languages=None) -> list[dict]:
         """
         Retrieves the transcript of a YouTube video and converts it to a timestamped format.
@@ -232,7 +282,7 @@ class YouTubeVideo(Logger):
             Exception: If an error occurs while retrieving the transcript.
         """
         self.logger.info(f"Getting transcript ...")
-        video_id = self.url.split('=')[-1]
+        video_id = self._extract_video_id(self.url)
 
         preferred_languages = ["de", "en"] if languages is None else list(languages)
 
@@ -262,7 +312,16 @@ class YouTubeVideo(Logger):
             return None
 
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=self._proxies)
+            # Build a proxy config from the requests-style proxies dict, if any.
+            proxy_config = None
+            if self._proxies:
+                http_url = self._proxies.get("http")
+                https_url = self._proxies.get("https")
+                if http_url or https_url:
+                    proxy_config = GenericProxyConfig(http_url=http_url, https_url=https_url)
+
+            ytt_api = YouTubeTranscriptApi(proxy_config=proxy_config)
+            transcript_list = ytt_api.list(video_id)
 
             transcript = _safe_find_transcript(transcript_list, "find_generated_transcript", preferred_languages)
             if transcript is None:

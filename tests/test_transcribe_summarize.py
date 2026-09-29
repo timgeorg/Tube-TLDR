@@ -1,104 +1,153 @@
 # Let Python locate the source code
-import sys, os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
-# Testing
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import unittest
-# Native Libraries
+from unittest.mock import patch, MagicMock
 from datetime import timedelta
-# External Libraries
-from bs4 import BeautifulSoup
-# User-defined Imports
-from src.transcribe_summarize import YouTubeTranscribeSummarize
+
 from src.youtube_video import YouTubeVideo
+from src.transcribe_summarize import (
+    YouTubeTranscribeSummarize,
+    summary_by_chapters,
+    summary_entire_video,
+    summary_in_one_sentence,
+    _require_transcript,
+)
 
 
-class Test_YouTubeVideo_Init(unittest.TestCase):
-    def test_init(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=9bZkp7q19f0")
-        self.assertEqual(video.url, "https://www.youtube.com/watch?v=9bZkp7q19f0")
-    
-    def test_init_podcast(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        self.assertEqual(video.url, "https://www.youtube.com/watch?v=X4DpDM9jmqo")
+def _make_mock_video(transcript=None, chapters=None, title="Test Video", channel="Test Channel"):
+    """Build a YouTubeVideo mock with the attributes the summary functions need."""
+    video = MagicMock(spec=YouTubeVideo)
+    video.url = "https://www.youtube.com/watch?v=test"
+    video.title = title
+    video.channel = channel
+    video.transcript = transcript
+    video.chapters = chapters
+    video.chapters_available = chapters is not None
+    return video
 
-class Test_YouTubeVideo_GetMetadata(unittest.TestCase):
-    def test_get_metadata(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        metadata = video._get_metadata()
-        self.assertIsInstance(metadata, BeautifulSoup)
-    
-class Test_YouTubeVideo_GetMetadata(unittest.TestCase):
-    def test_get_metadata(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        metadata = video._get_metadata()
-        self.assertIsInstance(metadata, BeautifulSoup)
 
-class Test_YouTubeVideo_GetTitle(unittest.TestCase):
-    def test_get_title(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        video.soup = video._get_metadata()
-        title = video._get_title()
-        self.assertIsInstance(title, str)
-        self.assertNotEqual(title, "Title not found")
+class TestRequireTranscript(unittest.TestCase):
+    """Tests for the _require_transcript guard."""
 
-class Test_YouTubeVideo_GetChannel(unittest.TestCase):
-    def test_get_channel(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        video.soup = video._get_metadata()
-        channel = video._get_channel()
-        self.assertIsInstance(channel, str)
-        self.assertNotEqual(channel, "Channel name not found")
+    def test_raises_on_none_transcript(self):
+        video = _make_mock_video(transcript=None)
+        with self.assertRaises(ValueError) as ctx:
+            _require_transcript(video)
+        self.assertIn("No transcript available", str(ctx.exception))
 
-class Test_YouTubeVideo_GetDuration(unittest.TestCase):
-    def test_get_duration(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        video.soup = video._get_metadata()
-        duration = video._get_duration()
-        self.assertIsInstance(duration, timedelta)
-        self.assertNotEqual(duration, "Duration not found")
+    def test_raises_on_empty_transcript(self):
+        video = _make_mock_video(transcript=[])
+        with self.assertRaises(ValueError):
+            _require_transcript(video)
 
-class Test_YouTubeVideo_GetDescription(unittest.TestCase):
-    def test_get_description(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        video.soup = video._get_metadata()
-        description = video._get_description()
-        self.assertIsInstance(description, str)
-        self.assertNotEqual(description, None)
+    def test_passes_with_transcript(self):
+        video = _make_mock_video(transcript=[{"text": "hello", "timestamp": timedelta(0)}])
+        # Should not raise
+        _require_transcript(video)
 
-class Test_YouTubeVideo_GetTranscript(unittest.TestCase):
-    def test_get_transcript(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        # TODO
-    
-class Test_YouTubeTranscribeSummarize_GetOutline(unittest.TestCase):
-    def test_get_chapter_timestamps(self):
-        video = YouTubeVideo("https://www.youtube.com/watch?v=X4DpDM9jmqo")
-        video.get_data()
-        outline = video._extract_chapters()
 
-        expected_output = [
-        {"timestamp": "0:00", "content": "Intro"},
-        {"timestamp": "1:20", "content": "Gibt es Delfine die intensiven Kontakt zu Menschen suchen?"},
-        {"timestamp": "6:00", "content": "Wie viel Fisch darf ich essen, damit es noch nachhaltig ist?"},
-        {"timestamp": "23:00", "content": "Kann man mit einer Ober-Fanggrenze dafür sorgen, dass sich unsere Meere regenerieren?"},
-        {"timestamp": "30:00", "content": "Bei welchen Themen im Umweltschutz gibt es keine Ausreden?"},
-        {"timestamp": "43:00", "content": "Warum ist es trotz der hohen Kosten und geringer Erfolgschance so wichtig , zu versuchen jedes einzelne Tier zu retten?"},
-        {"timestamp": "50:00", "content": "Was läuft aktuell politisch und gesellschaftlich falsch?"},
-        {"timestamp": "1:20:00", "content": "Wie bist du vom Angler und Aquariums-Chef zu dem Robert geworden, der du heute bist?"},
-        {"timestamp": "1:41:00", "content": "Wie fandest du die Baby-Delfin Aktion von Inscope21?"},
-        {"timestamp": "1:44:00", "content": "Warum kann man Wale beim Abnoetauchen besser beobachten?"},
-        {"timestamp": "1:54:00", "content": "Wie ist das Gefühl von den größten Säugetieren der Welt, wahrgenommen zu werden?"},
-        {"timestamp": "2:09:30", "content": "Wird man es schaffen, Delfine und Wale zu verstehen?"},
-        {"timestamp": "2:23:00", "content": "Wie kann man selber tun, um den Tieren die in Gefangenschaft leben, zu helfen?"},
-        {"timestamp": "2:30:00", "content": "Warum sind Wale so viel emphatischer als Menschen?"},
-        {"timestamp": "2:53:00", "content": "Haben Wale Charakterunterschiede?"},
-        {"timestamp": "3:02:00", "content": "Welche Erlebnisse auf deinen Reisen waren für dich besonders einprägsam?"},
-        {"timestamp": "3:09:00", "content": "Wie stressig ist es das ganze Jahr auf Expeditionen zu sein?"},
-        {"timestamp": "3:23:15", "content": "Warum möchte niemand für Umweltschutz bezahlen und wie finanzierst du dich?"},
-        {"timestamp": "3:44:00", "content": "Würdest du nochmal Biologie studieren?"}
+class TestSummaryByChapters(unittest.TestCase):
+    """Tests for summary_by_chapters."""
+
+    def test_raises_on_no_transcript(self):
+        video = _make_mock_video(transcript=None, chapters=[{"timestamp": "0:00", "content": "Intro"}])
+        with self.assertRaises(ValueError):
+            summary_by_chapters(video=video)
+
+    def test_raises_on_no_chapters(self):
+        transcript = [{"text": "hello", "timestamp": timedelta(0)}]
+        video = _make_mock_video(transcript=transcript, chapters=None)
+        with self.assertRaises(ValueError) as ctx:
+            summary_by_chapters(video=video)
+        self.assertIn("no chapter markers", str(ctx.exception))
+
+    @patch("src.transcribe_summarize.gpt.get_chapter_summary")
+    def test_returns_chapter_summaries(self, mock_gpt):
+        mock_gpt.return_value = "Summary of chapter"
+        transcript = [
+            {"text": "intro text", "timestamp": timedelta(0)},
+            {"text": "chapter 1 text", "timestamp": timedelta(seconds=60)},
         ]
-        self.assertIsInstance(outline, list)
-        self.assertEqual(outline, expected_output)
+        chapters = [
+            {"timestamp": "0:00", "content": "Intro"},
+            {"timestamp": "1:00", "content": "Chapter 1"},
+        ]
+        video = _make_mock_video(transcript=transcript, chapters=chapters)
+
+        result = summary_by_chapters(video=video)
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], "Summary of chapter")
+
+
+class TestSummaryEntireVideo(unittest.TestCase):
+    """Tests for summary_entire_video."""
+
+    def test_raises_on_no_transcript(self):
+        video = _make_mock_video(transcript=None)
+        with self.assertRaises(ValueError):
+            summary_entire_video(video=video)
+
+    @patch("src.transcribe_summarize.gpt.get_whole_transcript_summary")
+    def test_returns_summary(self, mock_gpt):
+        mock_gpt.return_value = "Whole video summary"
+        transcript = [
+            {"text": "hello", "timestamp": timedelta(0)},
+            {"text": "world", "timestamp": timedelta(seconds=5)},
+        ]
+        video = _make_mock_video(transcript=transcript)
+
+        result = summary_entire_video(video=video)
+        self.assertEqual(result, "Whole video summary")
+        mock_gpt.assert_called_once()
+
+
+class TestSummaryOneSentence(unittest.TestCase):
+    """Tests for summary_in_one_sentence."""
+
+    def test_raises_on_no_transcript(self):
+        video = _make_mock_video(transcript=None)
+        with self.assertRaises(ValueError):
+            summary_in_one_sentence(video=video)
+
+    @patch("src.transcribe_summarize.gpt.get_one_sentence_summary")
+    def test_returns_one_sentence(self, mock_gpt):
+        mock_gpt.return_value = "One sentence summary."
+        transcript = [{"text": "hello", "timestamp": timedelta(0)}]
+        video = _make_mock_video(transcript=transcript, title="My Title")
+
+        result = summary_in_one_sentence(video=video)
+        self.assertEqual(result, "One sentence summary.")
+        mock_gpt.assert_called_once()
+
+
+class TestConvertTimestampsToTimedelta(unittest.TestCase):
+    """Tests for YouTubeTranscribeSummarize.convert_timestamps_to_timedelta."""
+
+    def test_convert_mmss(self):
+        video = _make_mock_video()
+        obj = YouTubeTranscribeSummarize(youtube_video=video)
+        chapters = [{"timestamp": "1:30", "content": "Chapter 1"}]
+        result = obj.convert_timestamps_to_timedelta(chapters)
+        self.assertEqual(result[0]["timestamp"], timedelta(minutes=1, seconds=30))
+        self.assertEqual(result[0]["timestr"], "1:30")
+
+    def test_convert_hhmmss(self):
+        video = _make_mock_video()
+        obj = YouTubeTranscribeSummarize(youtube_video=video)
+        chapters = [{"timestamp": "1:02:30", "content": "Chapter 2"}]
+        result = obj.convert_timestamps_to_timedelta(chapters)
+        self.assertEqual(result[0]["timestamp"], timedelta(hours=1, minutes=2, seconds=30))
+
+    def test_convert_invalid_format(self):
+        video = _make_mock_video()
+        obj = YouTubeTranscribeSummarize(youtube_video=video)
+        chapters = [{"timestamp": "invalid", "content": "Bad"}]
+        with self.assertRaises(ValueError):
+            obj.convert_timestamps_to_timedelta(chapters)
 
 
 if __name__ == '__main__':

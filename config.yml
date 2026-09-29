@@ -1,3 +1,25 @@
+llm:
+  # Provider: "openai" or "ollama"
+  # - openai: uses the OpenAI API (requires API_KEY / OPENAI_API_KEY env var)
+  # - ollama: uses Ollama Cloud (https://ollama.com) with a paid Ollama account,
+  #           or a local Ollama server. Requires OLLAMA_API_KEY env var for cloud.
+  provider: ollama
+
+  # Base URL override. Leave empty for provider defaults:
+  #   openai -> https://api.openai.com/v1
+  #   ollama -> https://ollama.com  (Ollama Cloud; or http://localhost:11434 for local)
+  base_url:
+
+  # Default model per provider. Override freely.
+  #   openai examples: gpt-4o-mini, gpt-4o
+  #   ollama cloud examples: gpt-oss:120b, gpt-oss:20b, deepseek-v3, qwen3:235b,
+  #                         llama3.3, kimi-k2.6, glm-4.6
+  model: gpt-oss:120b
+
+  # Optional model used for shorts/voiceover generation (heavier task).
+  # Falls back to `model` if empty.
+  model_heavy:
+
 proxy:
   # Master switch
   enabled: false

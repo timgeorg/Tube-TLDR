@@ -2,6 +2,7 @@
 import json
 import os
 from datetime import datetime, timedelta
+from typing import Optional
 # External Libraries
 from openai import OpenAI # OR: from openai import AzureOpenAI
 # User-defined Libraries
@@ -9,10 +10,12 @@ try:
     import src.gpt_functions as gpt
     from src.youtube_video import YouTubeVideo
     from src.logger import Logger
+    from src.config_loader import LLMSettings
 except ImportError:
     from youtube_video import YouTubeVideo
     from logger import Logger
     import gpt_functions as gpt
+    from config_loader import LLMSettings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -135,114 +138,48 @@ class YouTubeTranscribeSummarize(Logger):
         return sections
 
 
+def _require_transcript(video: YouTubeVideo) -> None:
+    """Raise a clear error if the video has no transcript.
+
+    The transcript can be None when subtitles are disabled or the fetch failed.
+    Without this guard, downstream code crashes with a confusing
+    "'NoneType' object is not iterable" error.
+    """
+    if not getattr(video, "transcript", None):
+        raise ValueError(
+            "No transcript available for this video. "
+            "Subtitles may be disabled, or the transcript fetch failed. "
+            "Try opening the transcript in YouTube manually, then reload the video."
+        )
 
 
-def example_summary(url: str, api_key=os.getenv('OPENAI_API_KEY')):
-    obj = YouTubeTranscribeSummarize(url=url, api_key=api_key)
-    obj.get_data()
-
-    desc = obj.description
-    outline = obj.get_outline(desc)
-
-    if obj.transcript is None:
-        ErrorMessage = f"Could not retrieve a transcript for the video {url}! \
-        This is most likely caused by: \
-        \n\nSubtitles are disabled for this video. \
-        \n\nOpen the transcript in YouTube manually and try again. \
-        This may resolve the issue."
-        print(ErrorMessage)
-        return ErrorMessage
-    
-    if obj.duration < timedelta(minutes=20):
-        unified_transcript = " ".join([item["text"] for item in obj.transcript])
-
-        summary = obj.get_whole_transcript_summary(unified_transcript)
-        chap_summaries = [summary]
-    else:
-        pass 
-
-    sections = []
-
-    if outline is None:
-        transcript = obj.transcript
-        transcript_length = len(transcript)
-        print(f"Transcript length: {transcript_length} segments")
-        # outline = obj._convert_timestamps(transcript) # only if outline is found in description
-        print(outline)
-        sections = obj.link_transcript_without_outline(transcript)
-        outline = "Synthetic"
-
-
-    if outline is None:
-        pass
-        # check how long the transcript is and create sections if too long
-
-    # TODO: make a summary of a short video with no outline
-
-    # TODO: make a summary of a long video with no outline (sections)
-
-
-    if outline:
-        if outline != "Synthetic":
-            outline = obj._convert_timestamps(outline)
-            sections = obj.link_content_to_outline(content=obj.transcript, outline=outline)
-        chap_summaries = []
-
-        for section in sections:
-            chap_summary = obj.get_chapter_summary(section)
-            chap_summaries.append(chap_summary)
-
-    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    long_summary_filename = f"{obj.channel}_Summary_{current_time}.md"
-    short_summary_filename = f"{obj.channel}_Short_Summary_{current_time}.md"
-    unified_summary_filename = f"{obj.channel}_Unified_Summary_{current_time}.md"
-
-    short_chapters = []
-    for chapter in chap_summaries:
-        short_chapter = obj.get_minimal_chapter_summary(chapter)
-        short_chapters.append(short_chapter)
-
-    # Concatenate all short chapters into one string
-    concatenated_short_chapters = "\n\n".join(short_chapters)
-    with open(short_summary_filename, "w", encoding='utf-8') as file:
-        file.write(concatenated_short_chapters)
-
-    # Get a unified summary of all chapters
-    unified_summary = obj.get_unified_summary(concatenated_short_chapters)
-    with open(unified_summary_filename, "w", encoding='utf-8') as file:
-        file.write(unified_summary)
-
-    # Write the summary into a markdown file
-    print("Writing summary to file ...")
-    with open(long_summary_filename, "w", encoding='utf-8') as file:
-        for summary in chap_summaries:
-            file.write(summary + "\n\n")
-    print(f"Summary successfully written to {long_summary_filename}")
-
-    return chap_summaries
-
-
-def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
+def summary_by_chapters(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> list[str]:
     """
     Summarizes the YouTube video by chapters.
-    Converts chapter timestamps to timedelta objects and links the transcript content. 
+    Converts chapter timestamps to timedelta objects and links the transcript content.
     Args:
         video (YouTubeVideo): The YouTube video object.
-        api_key (str): The OpenAI API key.
+        llm (LLMSettings, optional): LLM connection settings.
     Returns:
         list[str]: A list of chapter summaries.
     """
+    _require_transcript(video)
+    if not getattr(video, "chapters", None):
+        raise ValueError(
+            "This video has no chapter markers in its description. "
+            "Use 'summarize_entire_video' or 'summarize_one_sentence' instead."
+        )
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline)
-    
+
     # Parallelize chapter summaries (network-bound -> threads work well here)
     max_workers = min(8, len(sections)) or 1  # tune as needed (and to avoid rate-limits)
     chap_summaries = [None] * len(sections)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_idx = {
-            executor.submit(gpt.get_chapter_summary, sections[i], api_key=api_key): i
+            executor.submit(gpt.get_chapter_summary, sections[i], llm=llm): i
             for i in range(len(sections))
         }
         for future in as_completed(future_to_idx):
@@ -252,15 +189,16 @@ def summary_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     return chap_summaries
 
 
-def create_shorts_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
+def create_shorts_by_chapters(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> list[str]:
 
+    _require_transcript(video)
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
     sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline, short_form=True)
     shorts_per_chapter = []
     for section in sections:
-        chapter_script = gpt.rework_transcript_to_sentences(section)
-        shorts_script = gpt.create_shorts_script(chapter_script)
+        chapter_script = gpt.rework_transcript_to_sentences(section, llm=llm)
+        shorts_script = gpt.create_shorts_script(chapter_script, llm=llm)
         shorts_per_chapter.append(
             {
                 "heading": section["heading"],
@@ -270,43 +208,50 @@ def create_shorts_by_chapters(video: YouTubeVideo, api_key: str) -> list[str]:
     return shorts_per_chapter
 
 
-def summary_entire_video(video: YouTubeVideo, api_key: str) -> str:
+def summary_entire_video(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> str:
     """
     Summarizes the entire YouTube video.
     Converts the transcript into a single string and generates a summary.
     Args:
         video (YouTubeVideo): The YouTube video object.
-        api_key (str): The OpenAI API key.
+        llm (LLMSettings, optional): LLM connection settings.
     Returns:
         str: The summary of the entire video.
     """
+    _require_transcript(video)
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
-    summary = gpt.get_whole_transcript_summary(unified_transcript, api_key=api_key)
+    summary = gpt.get_whole_transcript_summary(unified_transcript, title=video.title, llm=llm)
     return summary
 
 
-def summary_in_one_sentence(video: YouTubeVideo, api_key: str) -> str:
+def summary_in_one_sentence(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> str:
     """
     Generates a one-sentence summary of the entire YouTube video.
     Converts the transcript into a single string and generates a summary.
     Args:
         video (YouTubeVideo): The YouTube video object.
-        api_key (str): The OpenAI API key.
+        llm (LLMSettings, optional): LLM connection settings.
     Returns:
         str: The one-sentence summary of the entire video.
     """
+    _require_transcript(video)
     obj = YouTubeTranscribeSummarize(youtube_video=video)
     unified_transcript = " ".join([item["text"] for item in obj.youtube_video.transcript])
-    summary = gpt.get_one_sentence_summary(unified_transcript, obj.youtube_video.title, api_key=api_key)
+    summary = gpt.get_one_sentence_summary(unified_transcript, obj.youtube_video.title, llm=llm)
     return summary
 
 
 if __name__ == '__main__':
 
     url = input("\n\nPlease enter the YouTube video URL: ")
-    summary_by_chapters(url=url)
-    # summary_entire_video(url=url)
+    video = YouTubeVideo(url=url)
+    video.get_data()
+    summaries = summary_by_chapters(video=video)
+    for s in summaries:
+        print(s)
+    # summary_entire_video(video=video)
+    # summary_in_one_sentence(video=video)
 
 
 

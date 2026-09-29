@@ -48,6 +48,69 @@ class ProxySettings:
     proxies: Optional[dict[str, str]]
 
 
+# Default base URLs per provider
+_DEFAULT_BASE_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "ollama": "https://ollama.com",  # Ollama Cloud; use http://localhost:11434 for local
+}
+
+
+@dataclass(frozen=True)
+class LLMSettings:
+    """Resolved LLM connection settings.
+
+    `api_key` is resolved from the environment here so callers get a ready-to-use value.
+    For `openai` we check API_KEY then OPENAI_API_KEY.
+    For `ollama` we check OLLAMA_API_KEY then API_KEY.
+    """
+    provider: str  # "openai" | "ollama"
+    base_url: str
+    model: str
+    model_heavy: str
+    api_key: Optional[str]
+
+    @property
+    def is_configured(self) -> bool:
+        # Ollama running locally without an API key is valid (key may be empty).
+        if self.provider == "ollama" and "localhost" in self.base_url:
+            return True
+        return bool(self.api_key)
+
+
+def get_llm_settings(cfg: dict[str, Any]) -> LLMSettings:
+    """Build LLMSettings from config + environment.
+
+    Config keys (all optional, under `llm:`):
+      provider (str): "openai" | "ollama"  -> default "openai"
+      base_url (str): override endpoint
+      model (str): default model
+      model_heavy (str): model for heavy tasks (falls back to model)
+    """
+    llm_cfg = (cfg or {}).get("llm") or {}
+
+    provider = str(llm_cfg.get("provider") or "openai").lower()
+    if provider not in _DEFAULT_BASE_URLS:
+        provider = "openai"
+
+    base_url = (llm_cfg.get("base_url") or "").strip() or _DEFAULT_BASE_URLS[provider]
+    model = str(llm_cfg.get("model") or "gpt-4o-mini")
+    model_heavy = str(llm_cfg.get("model_heavy") or "").strip() or model
+
+    # Resolve API key from environment based on provider
+    if provider == "ollama":
+        api_key = os.getenv("OLLAMA_API_KEY") or os.getenv("API_KEY")
+    else:
+        api_key = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY")
+
+    return LLMSettings(
+        provider=provider,
+        base_url=base_url,
+        model=model,
+        model_heavy=model_heavy,
+        api_key=api_key,
+    )
+
+
 def get_proxy_settings(cfg: dict[str, Any]) -> ProxySettings:
     """Compute proxy settings.
 
