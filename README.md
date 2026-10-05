@@ -22,7 +22,7 @@ Tube TLDR takes a YouTube video and produces a concise, readable summary powered
 #### Built With
 
 Python, Ollama Cloud / OpenAI & Streamlit <br>
-Docker (coming soon)
+Docker
 
 ## Running It
 

@@ -1,0 +1,6 @@
+# Shareable Streamlit defaults for Tube TLDR.
+[server]
+headless = true   # don't try to open a browser tab automatically
+
+[theme]
+base = "dark"

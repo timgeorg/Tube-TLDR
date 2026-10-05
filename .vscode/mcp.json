@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "tube-tldr": {
+      "command": "${command:python.interpreterPath}",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "OLLAMA_API_KEY": "${env:OLLAMA_API_KEY}",
+        "API_KEY": "${env:API_KEY}"
+      }
+    }
+  }
+}
