@@ -13,6 +13,22 @@ python -m src.mcp_server
 
 Each tool fetches the video itself; callers only pass a URL.
 
+## CLI vs MCP server — which one when?
+
+Both wrap the same summarizer core (`src/transcribe_summarize.py`). The difference is
+who drives the process:
+
+| | CLI (`python -m src.cli`) | MCP server (`python -m src.mcp_server`) |
+|---|---|---|
+| Caller | You, scripts, cron/systemd | An LLM agent (GitHub Copilot, Claude Desktop, Cursor) |
+| Transport | One process: argv in → text/exit code out | Persistent stdio JSON-RPC session |
+| Made for | Automation: nightly jobs on a VPS, batch runs, piping output to files, CI | Conversational use: "summarize this video" as a tool call during a chat |
+| Output | stdout (human markdown) / `--out` file / `--json` for programs | Tool-call result text back to the agent |
+| Setup | Nothing persistent — runs and exits | Client config (`.vscode/mcp.json` or agent JSON config) |
+
+Rule of thumb: **anything that runs without a human at a keyboard → CLI. Anything an
+AI agent should do for you mid-chat → MCP.**
+
 ## Tools
 
 | Tool | What it does | When to use it |

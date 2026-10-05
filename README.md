@@ -70,6 +70,10 @@ Nightly example:
 python -m src.cli "https://www.youtube.com/watch?v=..." --style entire --out /path/out.md
 ```
 
+Using it as an agent tool instead? The MCP server exposes the same three summarize
+tools to Copilot/Claude/Cursor — see
+[docs/MCP.md](docs/MCP.md#cli-vs-mcp-server--which-one-when) for when to pick which.
+
 ### LLM Configuration
 
 Tube TLDR supports two LLM backends, configured in `config.yml`:
