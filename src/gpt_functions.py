@@ -10,6 +10,7 @@ module-level default set via set_llm_settings().
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import List, Dict, Optional
 
@@ -24,6 +25,11 @@ try:
     from src.config_loader import LLMSettings
 except ImportError:  # when imported as a flat module
     from config_loader import LLMSettings
+
+
+# Warnings (e.g. empty Ollama responses) go to stderr via the root logger's
+# last-resort handler when no handler is configured.
+logger = logging.getLogger("gpt_functions")
 
 
 # Module-level default settings; overridden by set_llm_settings() from the UI/entrypoint.
@@ -90,6 +96,7 @@ def _chat(
     temperature: float = 0.08,
     max_tokens: int = 1024,
     stream: bool = False,
+    think: Optional[bool] = None,
     llm: Optional[LLMSettings] = None,
 ):
     """Unified chat completion dispatcher.
@@ -97,22 +104,52 @@ def _chat(
     Returns the full text response (string). When stream=True, consumes the
     stream and returns the concatenated text (so callers don't need to care
     about the backend).
+
+    `think` controls Ollama's thinking/reasoning mode (ignored for OpenAI).
+    None means "use the configured default" (LLMSettings.think, which resolves
+    to False for Ollama). Reasoning models can otherwise burn the whole
+    num_predict budget on internal reasoning and return empty content.
     """
     s = llm or _DEFAULT_LLM
     use_model = model or s.model
 
     if s.provider == "ollama":
         client = _ollama_client(s)
-        kwargs = dict(model=use_model, messages=messages, stream=stream)
-        # Ollama uses num_predict instead of max_tokens; map it.
-        if max_tokens is not None:
-            kwargs["options"] = {"temperature": temperature, "num_predict": max_tokens}
-        else:
-            kwargs["options"] = {"temperature": temperature}
-        resp = client.chat(**kwargs)
-        if stream:
-            return "".join(part["message"]["content"] for part in resp if part.get("message"))
-        return resp["message"]["content"]
+        # Explicit param wins; otherwise fall back to the configured default.
+        effective_think = think if think is not None else (s.think if s.think is not None else False)
+
+        def _ollama_call(think_value: bool):
+            kwargs = dict(model=use_model, messages=messages, stream=stream)
+            # Ollama uses num_predict instead of max_tokens; map it.
+            if max_tokens is not None:
+                kwargs["options"] = {"temperature": temperature, "num_predict": max_tokens}
+            else:
+                kwargs["options"] = {"temperature": temperature}
+            try:
+                return client.chat(think=think_value, **kwargs)
+            except TypeError:
+                # Older ollama clients (<0.4) don't accept the `think` kwarg.
+                return client.chat(**kwargs)
+
+        def _extract(resp):
+            if stream:
+                parts = list(resp)
+                text = "".join(p["message"]["content"] for p in parts if p.get("message"))
+                reason = parts[-1].get("done_reason") if parts else None
+                return text, reason
+            return resp["message"]["content"], resp.get("done_reason")
+
+        content, done_reason = _extract(_ollama_call(effective_think))
+        if not (content or "").strip():
+            # Thinking models can exhaust num_predict on reasoning and return
+            # empty content with done_reason="length" — silently, no exception.
+            logger.warning(
+                "Ollama returned empty content (model=%s, done_reason=%s, think=%s); "
+                "retrying once with think=False",
+                use_model, done_reason, effective_think,
+            )
+            content, _ = _extract(_ollama_call(False))
+        return content
 
     # Default: OpenAI-compatible
     client = _openai_client(s)

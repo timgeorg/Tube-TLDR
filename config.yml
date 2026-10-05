@@ -20,6 +20,12 @@ llm:
   # Falls back to `model` if empty.
   model_heavy:
 
+  # Ollama thinking/reasoning mode (ignored for the openai provider).
+  # Thinking models burn the num_predict budget on internal reasoning before
+  # emitting any visible content, which can return empty summaries. Disable
+  # for summarization unless you know your model needs thinking.
+  think: false
+
 proxy:
   # Master switch
   enabled: false

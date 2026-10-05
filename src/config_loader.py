@@ -68,6 +68,10 @@ class LLMSettings:
     model: str
     model_heavy: str
     api_key: Optional[str]
+    # Ollama thinking/reasoning mode. None = auto (resolves to False for ollama).
+    # Reasoning models can burn the num_predict budget on internal reasoning
+    # before emitting visible content, yielding empty responses.
+    think: Optional[bool] = None
 
     @property
     def is_configured(self) -> bool:
@@ -85,6 +89,7 @@ def get_llm_settings(cfg: dict[str, Any]) -> LLMSettings:
       base_url (str): override endpoint
       model (str): default model
       model_heavy (str): model for heavy tasks (falls back to model)
+      think (bool): Ollama thinking mode; absent -> False for ollama, None otherwise
     """
     llm_cfg = (cfg or {}).get("llm") or {}
 
@@ -95,6 +100,14 @@ def get_llm_settings(cfg: dict[str, Any]) -> LLMSettings:
     base_url = (llm_cfg.get("base_url") or "").strip() or _DEFAULT_BASE_URLS[provider]
     model = str(llm_cfg.get("model") or "gpt-4o-mini")
     model_heavy = str(llm_cfg.get("model_heavy") or "").strip() or model
+
+    # Thinking mode: explicit config wins; absent -> False for ollama (thinking
+    # models otherwise risk empty responses), None for openai (no such concept).
+    think_raw = llm_cfg.get("think")
+    if think_raw is None:
+        think: Optional[bool] = False if provider == "ollama" else None
+    else:
+        think = bool(think_raw)
 
     # Resolve API key from environment based on provider
     if provider == "ollama":
@@ -108,6 +121,7 @@ def get_llm_settings(cfg: dict[str, Any]) -> LLMSettings:
         model=model,
         model_heavy=model_heavy,
         api_key=api_key,
+        think=think,
     )
 
 
