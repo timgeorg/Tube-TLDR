@@ -36,8 +36,37 @@ There are also a few extra helpers if you want to explore alternative ways to ru
 
 - **Dockerfile** for containerized runs
 - **PyInstaller** setup via `launcher.spec`
-- **Headless mode** via `headless.py`
+- **CLI** via `python -m src.cli` (non-interactive; see [Using the Command Line](#using-the-command-line))
 - **Setup/Run scripts** (`setup.bat`, `run.bat`, `run.sh`) to bootstrap and run directly
+
+### Using the Command Line
+
+For scripts, cron jobs, and agents, `src.cli` summarizes a single video without
+any prompts. It reads the same `config.yml` and environment as the UI, and keeps
+stdout clean — only the summary (or the JSON payload) is printed there; all
+progress and errors go to stderr.
+
+```bash
+python -m src.cli <url> [--style chapters|entire|one-sentence|shorts] \
+                       [--language de,en] [--out PATH] [--json] \
+                       [--config PATH] [--timeout SECONDS]
+```
+
+- `--style entire` (default) — whole-video bullet summary
+- `--style chapters` — chapter-by-chapter summary (needs chapter markers)
+- `--style one-sentence` — one-sentence TL;DR
+- `--style shorts` — numbered short-form ideas per chapter (needs chapter markers)
+
+`--out PATH` writes the markdown to a file instead of stdout; `--json` emits a
+machine-readable object; `--language de,en` sets the transcript language
+preference. Exit codes: `0` success, `1` config/IO error, `2` usage error or
+timeout, `3` fetch failure, `4` summarization failure.
+
+Nightly example:
+
+```bash
+python -m src.cli "https://www.youtube.com/watch?v=..." --style entire --out /path/out.md
+```
 
 ### LLM Configuration
 
