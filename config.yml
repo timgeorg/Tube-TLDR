@@ -27,6 +27,7 @@ llm:
   think: false
 
 proxy:
+  # VPS/datacenter IPs usually get blocked by YouTube — use a residential proxy there. See docs/RUNBOOK.md.
   # Master switch
   enabled: false
 

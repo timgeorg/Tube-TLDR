@@ -34,9 +34,11 @@ streamlit run summarizer_ui.py
 
 There are also a few extra helpers if you want to explore alternative ways to run or package it:
 
-- **Dockerfile** for containerized runs
-- **PyInstaller** setup via `launcher.spec`
 - **CLI** via `python -m src.cli` (non-interactive; see [Using the Command Line](#using-the-command-line))
+- **MCP server** via `python -m src.mcp_server` (for AI agents; see [Using as an MCP Tool](#using-as-an-mcp-tool-for-ai-agents))
+- **Streamlit UI** via `streamlit run summarizer_ui.py` (the default, interactive)
+- **Dockerfile** for containerized runs
+- **PyInstaller** launcher via `launcher.spec` (packages the Streamlit UI into a desktop executable)
 - **Setup/Run scripts** (`setup.bat`, `run.bat`, `run.sh`) to bootstrap and run directly
 
 ### Using the Command Line
@@ -113,6 +115,18 @@ Restart VS Code (or reload the window) and the tools will appear in Copilot Chat
 
 The MCP server reads `config.yml` and environment variables at startup, so it
 uses the same LLM provider/model as the Streamlit UI.
+
+## Documentation
+
+- [docs/MCP.md](docs/MCP.md) — MCP server setup and the tools it exposes.
+- [docs/RUNBOOK.md](docs/RUNBOOK.md) — VPS deployment, the residential-proxy requirement, cron/systemd, and monitoring.
+
+## Known limitations
+
+- **Playlists are not supported yet.** `src.cli` summarizes a single video URL; a nightly playlist watcher is on the roadmap.
+- **A residential proxy is required on datacenter IPs.** YouTube blocks most cloud-provider ranges — see [docs/RUNBOOK.md](docs/RUNBOOK.md).
+- **Shorts generation is experimental.** It lives in a separate module and output quality varies.
+- **Long videos (>45–60 min) are summarized in a single LLM call.** Chunked map-reduce is on the roadmap.
 
 ### Shoutout
 
