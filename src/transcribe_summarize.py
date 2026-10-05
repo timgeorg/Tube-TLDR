@@ -189,25 +189,6 @@ def summary_by_chapters(video: YouTubeVideo, llm: Optional[LLMSettings] = None) 
     return chap_summaries
 
 
-def create_shorts_by_chapters(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> list[str]:
-
-    _require_transcript(video)
-    obj = YouTubeTranscribeSummarize(youtube_video=video)
-    outline = obj.convert_timestamps_to_timedelta(obj.youtube_video.chapters)
-    sections = obj.link_content_to_outline(content=obj.youtube_video.transcript, outline=outline, short_form=True)
-    shorts_per_chapter = []
-    for section in sections:
-        chapter_script = gpt.rework_transcript_to_sentences(section, llm=llm)
-        shorts_script = gpt.create_shorts_script(chapter_script, llm=llm)
-        shorts_per_chapter.append(
-            {
-                "heading": section["heading"],
-                "script": shorts_script,
-            }
-        )
-    return shorts_per_chapter
-
-
 def summary_entire_video(video: YouTubeVideo, llm: Optional[LLMSettings] = None) -> str:
     """
     Summarizes the entire YouTube video.

@@ -7,6 +7,7 @@ from dotenv import load_dotenv, find_dotenv
 # User Defined Libraries
 import src.transcribe_summarize as ts
 import src.gpt_functions as gpt
+from src.shorts import create_shorts_by_chapters
 from src.config_loader import load_config, get_proxy_settings, get_llm_settings
 
 # Loads .env from the project root (searches upward from this file / CWD)
@@ -212,7 +213,7 @@ if 'youtube_video' in st.session_state and st.session_state.youtube_video:
         if st.button("Shorts by Chapters"):
             with st.spinner('Generating ideas for Shorts by chapters...'):
                 try:
-                    shorts_by_chapters_result = ts.create_shorts_by_chapters(
+                    shorts_by_chapters_result = create_shorts_by_chapters(
                         video=st.session_state.youtube_video,
                         llm=llm_settings
                     )

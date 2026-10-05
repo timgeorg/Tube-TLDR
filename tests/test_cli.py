@@ -67,7 +67,7 @@ class _CliTestBase(unittest.TestCase):
             patch.object(cli.ts, "summary_in_one_sentence", return_value="One sentence."),
             patch.object(cli.ts, "summary_by_chapters", return_value=["Chapter A", "Chapter B"]),
             patch.object(
-                cli.ts,
+                cli.shorts,
                 "create_shorts_by_chapters",
                 return_value=[{"heading": "Intro", "script": "Hook line."}],
             ),

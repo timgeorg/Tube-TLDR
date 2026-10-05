@@ -32,6 +32,28 @@ All three are annotated `readOnlyHint: true`, `idempotentHint: true`,
 `openWorldHint: true` — they read public YouTube pages and call your LLM, and write
 no files.
 
+## Experimental tools
+
+| Tool | What it does | When to use it |
+|------|--------------|----------------|
+| `generate_shorts_scripts` | Generates a short-form (Shorts / Reels / TikTok) voiceover script per chapter. | You want draft short-form scripts. **Requires chapter markers** — errors otherwise. |
+
+`generate_shorts_scripts` takes the same arguments as the core tools (`url`
+required, `language` optional) and carries the same read-only annotations.
+
+> **Experimental.** Quality varies and the prompts are still being tuned. The
+> chapter-less crash is guarded (returns `isError: true`), but treat the output as
+> a draft, not a finished script.
+
+There is also a standalone experimental CLI:
+
+```
+python -m src.shorts_cli <url> [--language de,en] [--out PATH] [--config PATH]
+```
+
+It is deliberately decoupled from `src.cli` so the experimental path can change
+without touching the stable product.
+
 ## Configuration
 
 The server reads the same config as the Streamlit UI:

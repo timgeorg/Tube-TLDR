@@ -305,47 +305,4 @@ def get_unified_summary(sections: List[Dict], llm: Optional[LLMSettings] = None)
     )
 
 
-def rework_transcript_to_sentences(transcript_item: dict, llm: Optional[LLMSettings] = None) -> dict:
-    """
-    """
-    return _chat(
-        messages=[
-            {'role': 'system',
-            'content':
-                'Rework the following transcript item to a more readable format.\
-                Stay in the original language!  \
-                Do not change the content, just make it more readable. \
-                Shorten this into whole sentences. I want you to build whole sentences with the timestamps, but keep it as short as it makes sense to get a whole and finished sentence. \
-                You are allowed to polish that sentence and add punctuation, etc.'},
 
-            {'role': 'user', 'content': str(transcript_item)}
-        ],
-        temperature=0.1,
-        max_tokens=512,
-        llm=llm,
-    )
-
-
-def create_shorts_script(cleaned_transcript: str, llm: Optional[LLMSettings] = None):
-    """
-    """
-    s = llm or _DEFAULT_LLM
-    return _chat(
-        messages=[
-            {'role': 'system',
-            'content':
-                'Create a Voiceover for short-form content based on the provided trancript. \
-                Stay in the original language and keep it short, engaging and conversational! \
-                Create a HOOK at the beginning of the video like "Hast du dich schon mal gefragt, ...?" \
-                and a CALL TO ACTION at the end of the video, e.g to check out the full video on the channel. \
-                Make it as short as possible! No AI slop or unnecessary words. Absolutely laidback and on point. \
-                Create a smooth text without timestamps or block elements to that it can immediately be sythezized to Voice. \
-                '},
-
-            {'role': 'user', 'content': cleaned_transcript}
-        ],
-        model=s.model_heavy,
-        temperature=0.1,
-        max_tokens=512,
-        llm=llm,
-    )

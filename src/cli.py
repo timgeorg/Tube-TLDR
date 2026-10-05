@@ -42,6 +42,9 @@ from src.config_loader import get_llm_settings, get_proxy_settings, load_config
 from src.youtube_video import YouTubeVideo
 import src.gpt_functions as gpt
 import src.transcribe_summarize as ts
+# Experimental shorts machinery lives in its own package (see src/shorts).
+# Imported as a module so tests can patch src.cli.shorts.create_shorts_by_chapters.
+import src.shorts as shorts
 
 _LOG_NAME = "tube-tldr-cli"
 _STYLES = ("chapters", "entire", "one-sentence", "shorts")
@@ -285,7 +288,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             result: Any = ts.summary_by_chapters(video=video, llm=llm_settings)
         elif args.style == "shorts":
             log.info("Generating shorts ideas ...")
-            result = ts.create_shorts_by_chapters(video=video, llm=llm_settings)
+            result = shorts.create_shorts_by_chapters(video=video, llm=llm_settings)
         elif args.style == "one-sentence":
             log.info("Summarizing (one sentence) ...")
             result = ts.summary_in_one_sentence(video=video, llm=llm_settings)

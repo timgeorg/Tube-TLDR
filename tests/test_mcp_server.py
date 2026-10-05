@@ -164,11 +164,16 @@ class TestTimeout(_McpTestBase):
 
 
 class TestToolDefinitions(unittest.TestCase):
-    def test_three_tools_with_annotations_and_titles(self):
+    def test_four_tools_with_annotations_and_titles(self):
         names = [t.name for t in _TOOLS]
         self.assertEqual(
             names,
-            ["summarize_by_chapters", "summarize_entire_video", "summarize_one_sentence"],
+            [
+                "summarize_by_chapters",
+                "summarize_entire_video",
+                "summarize_one_sentence",
+                "generate_shorts_scripts",
+            ],
         )
         for tool in _TOOLS:
             self.assertIsNotNone(tool.title)

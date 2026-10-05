@@ -54,6 +54,8 @@ logger = logging.getLogger("tube-tldr-mcp")
 # ---------------------------------------------------------------------------
 import src.transcribe_summarize as ts
 import src.gpt_functions as gpt
+# Experimental shorts machinery (separate package; see src/shorts).
+import src.shorts as shorts
 from src.youtube_video import YouTubeVideo
 from src.config_loader import load_config, get_proxy_settings, get_llm_settings
 
@@ -141,6 +143,21 @@ _TOOLS = [
         ),
         inputSchema=_COMMON_INPUT_SCHEMA,
         annotations=_READ_ONLY_ANNOTATIONS,
+    ),
+    Tool(
+        name="generate_shorts_scripts",
+        title="Generate Shorts Scripts (experimental)",
+        description=(
+            "Experimental: generate short-form video scripts per chapter. "
+            "Quality varies; requires chapter markers."
+        ),
+        inputSchema=_COMMON_INPUT_SCHEMA,
+        annotations=ToolAnnotations(
+            readOnlyHint=True,
+            idempotentHint=True,
+            openWorldHint=True,
+            title="Generate Shorts Scripts (experimental)",
+        ),
     ),
 ]
 
@@ -248,6 +265,10 @@ async def _handle_call_tool(name: str, arguments: dict[str, Any]) -> CallToolRes
         elif name == "summarize_one_sentence":
             coro = asyncio.to_thread(
                 ts.summary_in_one_sentence, video=video, llm=_llm
+            )
+        elif name == "generate_shorts_scripts":
+            coro = asyncio.to_thread(
+                shorts.create_shorts_by_chapters, video=video, llm=_llm
             )
         else:
             return _error_result(f"Unknown tool: {name}")
