@@ -227,6 +227,48 @@ and re-run the container.
 | Exit code `1` | Config problem (proxy enabled but unset, or LLM unconfigured) | Check `config.yml` and `.env` |
 | Exit code `3` | Fetch failure (network, no transcript, shorts without chapters) | Check proxy and video URL |
 | Exit code `4` | Summarization failure (LLM error) | Check API key, model name, and provider reachability |
+| `No transcript available` on a caption-less video | Whisper extras not installed, or `transcription.fallback: off` | Install `requirements-whisper.txt` and leave `fallback: auto` (see below) |
 
 Exit codes: `0` success, `1` config/IO error, `2` usage error or timeout,
 `3` fetch failure, `4` summarization failure.
+
+### No-caption videos (local Whisper fallback)
+
+Some videos have subtitles disabled. By default Tube-TLDR now falls back to
+**local Whisper transcription** instead of failing:
+
+```yaml
+transcription:
+  fallback: auto   # auto | off | force
+  model: small     # tiny | base | small | medium
+```
+
+- `auto` (default) — captions first, Whisper only when captions are missing.
+- `off` — never transcribe locally (the old behavior; caption-less videos fail).
+- `force` — always transcribe locally (useful for testing, or when captions are
+  low quality).
+
+Install the optional extras into the same venv:
+
+```bash
+.venv/bin/pip install -r requirements-whisper.txt
+```
+
+**Cost / disk expectations.**
+
+- Model sizes trade speed for accuracy: `tiny` < `base` < `small` (default) <
+  `medium`. On a modern laptop CPU with `int8`, `small` runs at roughly
+  **0.2× real-time** — a 20-minute video takes ~4 minutes. `medium` is several
+  times slower; `tiny`/`base` are faster but noticeably less accurate.
+- The first run downloads the model to `~/.cache/huggingface` (`small` is
+  ~460 MB). Subsequent runs reuse it. Budget disk for the model plus the
+  temporary audio file (deleted after each run).
+- `faster-whisper` decodes audio via PyAV, so **no ffmpeg binary is required**.
+
+**Known gap — the fallback ignores the proxy.** The `yt-dlp` audio download in
+the fallback does **not** pick up `config.yml`'s `proxy:` settings; the proxy is
+only applied to the YouTube-transcript/metadata path. On a datacenter-IP VPS
+(section 1) the audio download may therefore still be blocked even with a
+residential proxy configured. Handle that before relying on the fallback there
+(e.g. route the whole process through the proxy, or run the fallback on a
+residential machine).

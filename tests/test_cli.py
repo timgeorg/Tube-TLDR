@@ -71,6 +71,11 @@ class _CliTestBase(unittest.TestCase):
                 "create_shorts_by_chapters",
                 return_value=[{"heading": "Intro", "script": "Hook line."}],
             ),
+            # The optional Whisper fallback is a no-op here: these tests exercise
+            # the CLI wiring, not the fallback itself (see test_whisper_fallback.py
+            # and TestTranscriptSource below). Without this patch a caption-less
+            # video would hit the real dependency check and exit 1 instead of 3.
+            patch.object(cli.whisper_fallback, "ensure_transcript", return_value=True),
         ]
         for p in self._patches:
             p.start()
@@ -384,6 +389,102 @@ class TestConfigOverride(unittest.TestCase):
                     os.environ.pop("CONFIG_PATH", None)
                 else:
                     os.environ["CONFIG_PATH"] = old_env
+
+
+class TestTranscriptSource(_CliTestBase):
+    """--transcript-source flag → whisper mode mapping + exit codes.
+
+    The mapping lives in ``cli._resolve_transcript_mode`` (read it: captions→off,
+    whisper→auto, force-whisper→force, auto→config fallback). These tests assert
+    the *actual* mapping and the CLI's error handling around the fallback.
+    """
+
+    def setUp(self):
+        super().setUp()
+        # Replace the base's no-op with an inspectable mock.
+        self.ensure = MagicMock(return_value=True)
+        patcher = patch.object(cli.whisper_fallback, "ensure_transcript", self.ensure)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _run(self, argv):
+        import io
+        from contextlib import redirect_stdout, redirect_stderr
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_force_whisper_maps_to_mode_force(self):
+        code, _, _ = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "force-whisper"]
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "force")
+
+    def test_captions_maps_to_mode_off(self):
+        code, _, _ = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "captions"]
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "off")
+
+    def test_whisper_maps_to_mode_auto(self):
+        code, _, _ = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "whisper"]
+        )
+        self.assertEqual(code, 0)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "auto")
+
+    def test_auto_defers_to_config_fallback(self):
+        with patch.object(cli, "load_config", return_value={"transcription": {"fallback": "off"}}):
+            code, _, _ = self._run(
+                ["https://www.youtube.com/watch?v=test", "--transcript-source", "auto"]
+            )
+        self.assertEqual(code, 0)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "off")
+
+    def test_default_flag_is_auto(self):
+        code, _, _ = self._run(["https://www.youtube.com/watch?v=test"])
+        self.assertEqual(code, 0)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "auto")
+
+    def test_missing_dependency_exits_1_with_hint(self):
+        self.ensure.side_effect = cli.whisper_fallback.MissingDependencyError(
+            "Local transcription fallback requires optional dependencies. "
+            "Install them with: pip install -r requirements-whisper.txt"
+        )
+        code, out, err = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "force-whisper"]
+        )
+        self.assertEqual(code, 1)
+        self.assertEqual(out, "")
+        self.assertIn("requirements-whisper.txt", err)
+
+    def test_runtime_error_exits_3(self):
+        self.ensure.side_effect = RuntimeError("audio download failed: boom")
+        code, out, err = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "force-whisper"]
+        )
+        self.assertEqual(code, 3)
+        self.assertEqual(out, "")
+        self.assertIn("audio download failed", err)
+
+    def test_captions_present_with_mode_off_keeps_captions(self):
+        """captions→off + captions present: ensure_transcript is a harmless no-op.
+
+        The real ensure_transcript returns False for mode=off without touching
+        the video; here the mock returns True, so we assert the *flow*: the CLI
+        still summarizes using the existing captions and exits 0.
+        """
+        self.video.transcript = [{"text": "existing", "timestamp": timedelta(0)}]
+        code, out, _ = self._run(
+            ["https://www.youtube.com/watch?v=test", "--transcript-source", "captions"]
+        )
+        self.assertEqual(code, 0)
+        self.assertIn("## Test Video", out)
+        self.assertEqual(self.ensure.call_args.kwargs["mode"], "off")
 
 
 if __name__ == "__main__":

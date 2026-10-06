@@ -38,3 +38,13 @@ proxy:
   # "https": "socks5h://torproxy:9050",
   http:
   https:
+
+transcription:
+  # Local Whisper fallback for videos WITHOUT captions. Needs the optional
+  # extras: pip install -r requirements-whisper.txt
+  # fallback: auto   = captions first, Whisper only if captions missing
+  #           off    = never transcribe locally (old behavior)
+  #           force  = always transcribe locally (testing/low-quality captions)
+  fallback: auto
+  # faster-whisper model size: tiny | base | small (default) | medium
+  model: small

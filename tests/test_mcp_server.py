@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import asyncio
 import time
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import src.mcp_server as mcp_server
 from src.mcp_server import _handle_call_tool, _TOOLS, TOOL_TIMEOUT_S
@@ -161,6 +161,37 @@ class TestTimeout(_McpTestBase):
 
         self.assertTrue(result.isError)
         self.assertIn("timed out", result.content[0].text)
+
+
+class TestWhisperHint(_McpTestBase):
+    """Missing Whisper deps must not kill the tool: the no-transcript error
+    carries the install hint so the agent can tell the user what to install.
+
+    This exercises the *real* ``_fetch_video`` (restored from the base class),
+    with ``YouTubeVideo`` and ``ensure_transcript`` patched, so the hint-stashing
+    logic itself is under test.
+    """
+
+    def test_missing_deps_hint_appended_to_error(self):
+        video = _make_mock_video()
+        video.transcript = None
+        mcp_server._fetch_video = self._orig_fetch  # use the real wiring
+
+        def _boom(*args, **kwargs):
+            raise mcp_server.whisper_fallback.MissingDependencyError(
+                "Local transcription fallback requires optional dependencies. "
+                "Install them with: pip install -r requirements-whisper.txt"
+            )
+
+        with patch.object(mcp_server, "YouTubeVideo", return_value=video), \
+             patch.object(mcp_server.whisper_fallback, "ensure_transcript", side_effect=_boom):
+            result = _run(_handle_call_tool(
+                "summarize_entire_video",
+                {"url": "https://www.youtube.com/watch?v=test"},
+            ))
+
+        self.assertTrue(result.isError)
+        self.assertIn("requirements-whisper.txt", result.content[0].text)
 
 
 class TestToolDefinitions(unittest.TestCase):

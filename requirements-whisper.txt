@@ -1,0 +1,15 @@
+# Optional extras for the local Whisper transcription fallback (no captions).
+#
+# Install into the same venv as the app:
+#   .venv/bin/pip install -r requirements-whisper.txt
+#
+# faster-whisper decodes audio containers directly via PyAV, so no ffmpeg
+# binary is required. yt-dlp downloads the bestaudio track.
+faster-whisper>=1.0
+yt-dlp>=2024.10
+
+# PyAV is pinned below 19: faster-whisper 1.2.1 calls
+# av.open(..., metadata_errors="ignore"), which PyAV 19.0.x removed. Without
+# this pin a fresh install pulls av 19 and transcription fails at decode time
+# with "open() got an unexpected keyword argument 'metadata_errors'".
+av<19

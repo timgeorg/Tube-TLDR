@@ -9,12 +9,15 @@ Usage:
     python -m src.cli <url> [--style chapters|entire|one-sentence|shorts]
                            [--language de,en] [--out PATH] [--json]
                            [--config PATH] [--timeout SECONDS]
+                           [--transcript-source auto|captions|whisper|force-whisper]
 
 Exit codes:
     0  success
-    1  configuration or I/O error (unconfigured LLM, bad proxy config, write failure)
+    1  configuration or I/O error (unconfigured LLM, bad proxy config, write
+       failure, or missing optional Whisper dependencies)
     2  usage error (argparse) or --timeout deadline exceeded
-    3  fetch failure (network error, no transcript, shorts without chapters)
+    3  fetch failure (network error, no transcript, shorts without chapters,
+       or a failed local Whisper fallback)
     4  summarization failure (exception raised by the LLM path)
 
 Timeout semantics (honest best-effort):
@@ -45,9 +48,13 @@ import src.transcribe_summarize as ts
 # Experimental shorts machinery lives in its own package (see src/shorts).
 # Imported as a module so tests can patch src.cli.shorts.create_shorts_by_chapters.
 import src.shorts as shorts
+# Optional local Whisper fallback (no captions). Imports cleanly without the
+# optional deps — they are loaded lazily inside the module.
+import src.whisper_fallback as whisper_fallback
 
 _LOG_NAME = "tube-tldr-cli"
 _STYLES = ("chapters", "entire", "one-sentence", "shorts")
+_TRANSCRIPT_SOURCES = ("auto", "captions", "whisper", "force-whisper")
 
 
 class _ConfigError(Exception):
@@ -128,6 +135,18 @@ def _parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
         metavar="SECONDS",
         help="Overall wall-clock deadline in seconds (default: 900; <=0 disables).",
     )
+    parser.add_argument(
+        "--transcript-source",
+        choices=list(_TRANSCRIPT_SOURCES),
+        default="auto",
+        help=(
+            "Where the transcript comes from (default: auto). "
+            "auto = captions first, local Whisper fallback if none; "
+            "captions = never use Whisper; whisper = Whisper if captions are "
+            "missing; force-whisper = always transcribe locally. "
+            "Overrides config.yml transcription.fallback."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -141,6 +160,23 @@ def _split_languages(value: Optional[str]) -> Optional[list[str]]:
 
 def _deadline_exceeded(deadline: Optional[float]) -> bool:
     return deadline is not None and time.monotonic() > deadline
+
+
+def _resolve_transcript_mode(flag: str, cfg_fallback: str) -> str:
+    """Map the --transcript-source flag + config fallback to a whisper mode.
+
+    Returns one of ``auto`` / ``off`` / ``force`` (the modes understood by
+    :func:`src.whisper_fallback.ensure_transcript`). An explicit flag always
+    wins over ``config.yml``'s ``transcription.fallback``.
+    """
+    if flag == "captions":
+        return "off"
+    if flag == "whisper":
+        return "auto"
+    if flag == "force-whisper":
+        return "force"
+    # flag == "auto": defer to config (which itself defaults to "auto").
+    return cfg_fallback if cfg_fallback in ("auto", "off", "force") else "auto"
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +301,28 @@ def main(argv: Optional[list[str]] = None) -> int:
         video.get_data(languages=languages)
     except Exception as exc:  # noqa: BLE001 - surface any fetch failure as exit 3
         return _fail(f"Failed to fetch video: {exc}", 3)
+
+    # --- optional local Whisper fallback (no captions) ---------------------
+    transcription = whisper_fallback.get_transcription_settings(cfg)
+    whisper_mode = _resolve_transcript_mode(
+        args.transcript_source, transcription["fallback"]
+    )
+    whisper_timeout = 1800.0
+    if deadline is not None:
+        whisper_timeout = max(1.0, deadline - time.monotonic())
+    try:
+        whisper_fallback.ensure_transcript(
+            video,
+            mode=whisper_mode,
+            language=languages[0] if languages else None,
+            model_size=transcription["model"],
+            timeout_s=whisper_timeout,
+            logger=log,
+        )
+    except whisper_fallback.MissingDependencyError as exc:
+        return _fail(str(exc), 1)
+    except RuntimeError as exc:
+        return _fail(str(exc), 3)
 
     if not getattr(video, "transcript", None):
         return _fail(

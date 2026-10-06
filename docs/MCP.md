@@ -48,6 +48,27 @@ All three are annotated `readOnlyHint: true`, `idempotentHint: true`,
 `openWorldHint: true` — they read public YouTube pages and call your LLM, and write
 no files.
 
+### Transcript fallback
+
+When a video has no captions, the server applies the optional local Whisper
+fallback before giving up. The mode comes from `config.yml`:
+
+```yaml
+transcription:
+  fallback: auto   # auto | off | force
+  model: small     # tiny | base | small | medium
+```
+
+- `auto` (default) — captions first, Whisper only when captions are missing.
+- `off` — never transcribe locally (the old behavior).
+- `force` — always transcribe locally.
+
+The fallback needs the optional extras (`pip install -r requirements-whisper.txt`).
+If they are missing, the tool does **not** crash: the eventual no-transcript error
+is returned as `isError: true` with the install command appended, so the agent can
+tell you what to install. The tools themselves are unchanged otherwise — same
+arguments, same annotations, same output shape.
+
 ## Experimental tools
 
 | Tool | What it does | When to use it |

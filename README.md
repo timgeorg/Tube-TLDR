@@ -36,6 +36,7 @@ There are also a few extra helpers if you want to explore alternative ways to ru
 
 - **CLI** via `python -m src.cli` (non-interactive; see [Using the Command Line](#using-the-command-line))
 - **MCP server** via `python -m src.mcp_server` (for AI agents; see [Using as an MCP Tool](#using-as-an-mcp-tool-for-ai-agents))
+- **Optional local Whisper fallback** via `requirements-whisper.txt` (transcribes caption-less videos)
 - **Streamlit UI** via `streamlit run summarizer_ui.py` (the default, interactive)
 - **Dockerfile** for containerized runs
 - **PyInstaller** launcher via `launcher.spec` (packages the Streamlit UI into a desktop executable)
@@ -63,6 +64,14 @@ python -m src.cli <url> [--style chapters|entire|one-sentence|shorts] \
 machine-readable object; `--language de,en` sets the transcript language
 preference. Exit codes: `0` success, `1` config/IO error, `2` usage error or
 timeout, `3` fetch failure, `4` summarization failure.
+
+`--transcript-source auto|captions|whisper|force-whisper` controls where the
+transcript comes from: `auto` (default) uses captions and falls back to local
+Whisper only when captions are missing, `captions` never transcribes locally,
+`whisper` transcribes only when captions are missing, and `force-whisper`
+always transcribes locally. The same default lives in `config.yml` under
+`transcription:` (`fallback`, `model`). The fallback needs the optional extras:
+`pip install -r requirements-whisper.txt`.
 
 Nightly example:
 
@@ -129,6 +138,8 @@ uses the same LLM provider/model as the Streamlit UI.
 
 - **Playlists are not supported yet.** `src.cli` summarizes a single video URL; a nightly playlist watcher is on the roadmap.
 - **A residential proxy is required on datacenter IPs.** YouTube blocks most cloud-provider ranges — see [docs/RUNBOOK.md](docs/RUNBOOK.md).
+- **Caption-less videos need the optional Whisper extras.** Without `requirements-whisper.txt` installed, a video with no captions still fails with exit code `3` (the old behavior). With the extras installed, `transcription.fallback: auto` transcribes it locally instead.
+- **The Whisper fallback's yt-dlp download ignores `config.yml` proxy settings.** The proxy is only applied to the YouTube-transcript/metadata path, so on a datacenter IP the audio download may still be blocked — see [docs/RUNBOOK.md](docs/RUNBOOK.md).
 - **Shorts generation is experimental.** It lives in a separate module and output quality varies.
 - **Long videos (>45–60 min) are summarized in a single LLM call.** Chunked map-reduce is on the roadmap.
 

@@ -56,6 +56,9 @@ import src.transcribe_summarize as ts
 import src.gpt_functions as gpt
 # Experimental shorts machinery (separate package; see src/shorts).
 import src.shorts as shorts
+# Optional local Whisper fallback (no captions). Imports cleanly without the
+# optional deps — they are loaded lazily inside the module.
+import src.whisper_fallback as whisper_fallback
 from src.youtube_video import YouTubeVideo
 from src.config_loader import load_config, get_proxy_settings, get_llm_settings
 
@@ -169,11 +172,44 @@ def _fetch_video(url: str, language: Optional[str]) -> YouTubeVideo:
     """Create a YouTubeVideo, fetch its data, and return it.
 
     Raises on fetch failure or missing transcript.
+
+    When the video has no captions, the optional local Whisper fallback is
+    applied (mode from ``config.yml`` ``transcription.fallback``, default
+    ``auto``). Fallback failures never kill the tool: a missing-dependency
+    error is stashed on the video as ``_whisper_hint`` so the eventual
+    no-transcript error can point the user at the install command.
     """
     languages = [language] if language else None
     video = YouTubeVideo(url=url, proxy=_proxy.proxies)
     video.get_data(languages=languages)
+
+    # Optional local Whisper fallback (no captions).
+    transcription = whisper_fallback.get_transcription_settings(_cfg)
+    try:
+        whisper_fallback.ensure_transcript(
+            video,
+            mode=transcription["fallback"],
+            language=language,
+            model_size=transcription["model"],
+            logger=logger,
+        )
+    except whisper_fallback.MissingDependencyError:
+        # Don't kill the tool: stash a hint and let the summarize path raise the
+        # existing no-transcript error, with the hint appended.
+        setattr(
+            video,
+            "_whisper_hint",
+            "Optional whisper fallback unavailable: "
+            "pip install -r requirements-whisper.txt",
+        )
+    except RuntimeError as exc:
+        logger.warning("Whisper fallback failed for %s: %s", url, exc)
+
     if not video.transcript:
+        if getattr(video, "_whisper_hint", None):
+            # Return as-is; the summarize call raises the no-transcript error
+            # and the hint is appended in the error formatting path.
+            return video
         raise ValueError(
             "No transcript available for this video. "
             "Subtitles may be disabled or the transcript fetch failed."
@@ -286,7 +322,11 @@ async def _handle_call_tool(name: str, arguments: dict[str, Any]) -> CallToolRes
         )
     except Exception as e:
         logger.error("Failed to summarize %s: %s", url, e)
-        return _error_result(f"Error summarizing: {e}")
+        message = f"Error summarizing: {e}"
+        hint = getattr(video, "_whisper_hint", None)
+        if hint:
+            message = f"{message}\n{hint}"
+        return _error_result(message)
 
 
 # ---------------------------------------------------------------------------
