@@ -126,10 +126,10 @@ journalctl -u tube-tldr.service -n 50 --no-pager
 `Persistent=true` means a missed run (VPS asleep/rebooting) fires once on the
 next boot.
 
-> **Playlist URLs are not supported yet.** `src.cli` takes a single video URL.
-> Passing a playlist URL will not expand into per-video summaries — that is a
-> known limitation and a nightly playlist watcher is on the roadmap. For now,
-> feed it one video URL per run (or loop over a list in your own wrapper).
+> **Playlist URLs are not supported here.** `src.cli` takes a single video URL.
+> The connector lives outside this repo:
+> `Tools4Agents/skills/youtube-playlist-digest` (playlist → URLs → Tube-TLDR CLI
+> loop). This repo stays a stateless single-URL processor.
 
 ### 2c. Docker + cron
 
