@@ -61,9 +61,7 @@ class _ConfigError(Exception):
     """Raised for configuration problems that map to exit code 1."""
 
 
-# ---------------------------------------------------------------------------
 # Logging — stderr only. stdout is reserved for the summary / JSON payload.
-# ---------------------------------------------------------------------------
 def _setup_logging() -> logging.Logger:
     log = logging.getLogger(_LOG_NAME)
     log.setLevel(logging.INFO)
@@ -88,9 +86,7 @@ def _fail(message: str, code: int) -> int:
     return code
 
 
-# ---------------------------------------------------------------------------
 # Argument parsing
-# ---------------------------------------------------------------------------
 def _parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="python -m src.cli",
@@ -179,9 +175,7 @@ def _resolve_transcript_mode(flag: str, cfg_fallback: str) -> str:
     return cfg_fallback if cfg_fallback in ("auto", "off", "force") else "auto"
 
 
-# ---------------------------------------------------------------------------
 # Rendering
-# ---------------------------------------------------------------------------
 def _render_body(result: Any, style: str) -> str:
     """Render the summary body (no header) for the given style."""
     if style == "shorts" and isinstance(result, list):
@@ -254,9 +248,7 @@ def _write_out(path_str: str, text: str, log: logging.Logger) -> None:
     log.info("Wrote %s (%d bytes)", path, len(text.encode("utf-8")))
 
 
-# ---------------------------------------------------------------------------
 # Entry point
-# ---------------------------------------------------------------------------
 def main(argv: Optional[list[str]] = None) -> int:
     args = _parse_args(argv)
 

@@ -1,0 +1,25 @@
+name: No separator comments
+
+on:
+  pull_request:
+  push:
+    branches: [main, int]
+
+permissions:
+  contents: read
+
+jobs:
+  separators:
+    name: No separator comment lines
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan tracked source files
+        # STD010 in the code-standards gate. A comment line that is only a run of
+        # punctuation is forbidden; the comment text itself is fine.
+        run: |
+          if git grep -nP '^\s*(#|//)\s*[-=*_~#─━]{4,}\s*$' -- '*.py' '*.ts' '*.tsx'; then
+            echo "::error::Separator comment lines are forbidden. Keep only the comment text."
+            exit 1
+          fi

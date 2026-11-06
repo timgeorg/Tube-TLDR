@@ -49,9 +49,7 @@ def set_llm_settings(settings: LLMSettings) -> None:
     _DEFAULT_LLM = settings
 
 
-# ---------------------------------------------------------------------------
 # Backend dispatch
-# ---------------------------------------------------------------------------
 def _openai_client(s: LLMSettings) -> OpenAI:
     api_key = s.api_key or "ollama"  # local servers may not need a key
     return OpenAI(api_key=api_key, base_url=s.base_url)
@@ -172,9 +170,7 @@ def _chat(
     return resp.choices[0].message.content
 
 
-# ---------------------------------------------------------------------------
 # Prompt helpers (one per feature)
-# ---------------------------------------------------------------------------
 def get_chapter_summary(section: Dict, model: Optional[str] = None, llm: Optional[LLMSettings] = None) -> str:
     """
     Generates a summary for a given section of a video using the configured LLM.
@@ -303,6 +299,5 @@ def get_unified_summary(sections: List[Dict], llm: Optional[LLMSettings] = None)
         max_tokens=512,
         llm=llm,
     )
-
 
 
