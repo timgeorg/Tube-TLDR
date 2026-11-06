@@ -32,10 +32,8 @@ from mcp.types import CallToolResult, TextContent, Tool, ToolAnnotations
 # as headless.py.
 dotenv.load_dotenv()
 
-# ---------------------------------------------------------------------------
 # Logging — must be on stderr, NEVER stdout (stdout is the MCP transport).
 # Configure before importing modules that create loggers.
-# ---------------------------------------------------------------------------
 logging.basicConfig(
     stream=sys.stderr,
     level=logging.INFO,
@@ -49,9 +47,7 @@ for name in ("YouTubeVideo", "YouTubeTranscribeSummarize", "tube-tldr-mcp"):
 
 logger = logging.getLogger("tube-tldr-mcp")
 
-# ---------------------------------------------------------------------------
 # Import existing logic (after logging is configured).
-# ---------------------------------------------------------------------------
 import src.transcribe_summarize as ts
 import src.gpt_functions as gpt
 # Experimental shorts machinery (separate package; see src/shorts).
@@ -80,9 +76,7 @@ TOOL_TIMEOUT_S = float(os.environ.get("TUBE_TLDR_TOOL_TIMEOUT_S", "900"))
 
 server = Server("tube-tldr")
 
-# ---------------------------------------------------------------------------
 # Tool schemas
-# ---------------------------------------------------------------------------
 _COMMON_INPUT_SCHEMA = {
     "type": "object",
     "properties": {
@@ -165,9 +159,7 @@ _TOOLS = [
 ]
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 def _fetch_video(url: str, language: Optional[str]) -> YouTubeVideo:
     """Create a YouTubeVideo, fetch its data, and return it.
 
@@ -248,9 +240,7 @@ def _error_result(message: str) -> CallToolResult:
     )
 
 
-# ---------------------------------------------------------------------------
 # MCP handlers
-# ---------------------------------------------------------------------------
 @server.list_tools()
 async def list_tools() -> list[Tool]:
     return _TOOLS
@@ -329,9 +319,7 @@ async def _handle_call_tool(name: str, arguments: dict[str, Any]) -> CallToolRes
         return _error_result(message)
 
 
-# ---------------------------------------------------------------------------
 # Entry point
-# ---------------------------------------------------------------------------
 async def main() -> None:
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
